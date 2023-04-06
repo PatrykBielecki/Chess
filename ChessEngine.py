@@ -10,11 +10,20 @@ class GameState():
             ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
             ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "wp", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
+        # self.board = [
+        #     ["--", "--", "--", "--", "--", "--", "--", "bK"],
+        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
+        #     ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
         self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
                               'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves }
 
@@ -22,6 +31,10 @@ class GameState():
         self.moveLog = []
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
+
+        self.checkmate = False #not implemented
+        self.stalemate = False #not implemented
+
         self.inCheck = False
         self.pins = []
         self.checks = []
@@ -52,7 +65,8 @@ class GameState():
             self.board[move.startRow][move.endCol] = "--" #capturing the pawn        
         #pawn promotion
         if move.isPawnPromotion:
-            promotedPiece = input("Promote to Q, R, B or N:")
+            #promotedPiece = input("Promote to Q, R, B or N:")
+            promotedPiece = 'Q' #TO REPAIR!!!!
             self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
 
         #castle move
@@ -68,7 +82,6 @@ class GameState():
         self.updateCastleRights(move)
         self.castleRightsLog.append(CastleRights(self.currentCastlingRight.wks, self.currentCastlingRight.bks,
                                              self.currentCastlingRight.wqs,self.currentCastlingRight.bqs ))
-
 
     '''
     Undo the last move made
@@ -169,6 +182,11 @@ class GameState():
                 self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
             else:
                 self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
+        if len(moves) == 0:
+            if self.inCheck:
+                self.checkmate = True
+            else:
+                self.stalemate = True
         return moves
 
     '''
@@ -246,27 +264,27 @@ class GameState():
                     if (r+moveAmount, c+1) == self.enPassantPossible:
                         moves.append(Move((r, c), (r+moveAmount, c+1), self.board, enPassant=True))
                 
-        else: #black pawn moves
-            if self.board[r+1][c] == "--": #1 square move
-                if not piecePinned or pinDirection == (1, 0):
-                    moves.append(Move((r, c), (r+1, c), self.board))
-                    if r == 1 and self.board[r+2][c] == "--": #2 square moves
-                        moves.append(Move((r, c), (r+2, c), self.board))
+        # else: #black pawn moves
+        #     if self.board[r+1][c] == "--": #1 square move
+        #         if not piecePinned or pinDirection == (1, 0):
+        #             moves.append(Move((r, c), (r+1, c), self.board))
+        #             if r == 1 and self.board[r+2][c] == "--": #2 square moves
+        #                 moves.append(Move((r, c), (r+2, c), self.board))
 
-            #captures
-            if c-1 >= 0: #capture to left
-                if self.board[r+1][c-1][0] == 'w':
-                    if not piecePinned or pinDirection == (1, -1):
-                        moves.append(Move((r, c), (r+1, c-1), self.board))
-                    elif (r+1, c-1) == self.enPassantPossible:
-                        moves.append(Move((r, c), (r+1, c-1), self.board, enPassant=True))
+            # #captures
+            # if c-1 >= 0: #capture to left
+            #     if self.board[r+1][c-1][0] == 'w':
+            #         if not piecePinned or pinDirection == (1, -1):
+            #             moves.append(Move((r, c), (r+1, c-1), self.board))
+            #         elif (r+1, c-1) == self.enPassantPossible:
+            #             moves.append(Move((r, c), (r+1, c-1), self.board, enPassant=True))
                     
-            if c+1 <= 7: #captures to the right
-                if self.board[r+1][c+1][0] == 'w':
-                    if not piecePinned or pinDirection == (1, 1):
-                        moves.append(Move((r, c), (r+1, c+1), self.board))
-                    elif (r+1, c+1) == self.enPassantPossible:
-                        moves.append(Move((r, c), (r+1, c+1), self.board, enPassant=True))
+            # if c+1 <= 7: #captures to the right
+            #     if self.board[r+1][c+1][0] == 'w':
+            #         if not piecePinned or pinDirection == (1, 1):
+            #             moves.append(Move((r, c), (r+1, c+1), self.board))
+            #         elif (r+1, c+1) == self.enPassantPossible:
+            #             moves.append(Move((r, c), (r+1, c+1), self.board, enPassant=True))
 
     '''
     Get all the rook moves for the pawn located at row, col and add these moves to the list
@@ -397,14 +415,16 @@ class GameState():
             self.getQueensideCastleMoves(r, c, moves)
         
     def getKingsideCastleMoves(self, r, c, moves):
-        if self.board[r][c+1] == "--" and self.board[r][c+2] == "--":
-            if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
-                moves.append(Move((r, c), (r, c+2), self.board, castleMove=True))
+        if c == 4: #TO REPAIR!!!
+            if self.board[r][c+1] == "--" and self.board[r][c+2] == "--":
+                if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
+                    moves.append(Move((r, c), (r, c+2), self.board, castleMove=True))
 
     def getQueensideCastleMoves(self, r, c, moves):
-        if self.board[r][c-1] == "--" and self.board[r][c-2] == "--" and self.board[r][c-3] == "--":
-            if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c+2):
-                moves.append(Move((r, c), (r, c-2), self.board, castleMove=True))
+        if c == 4: #TO REPAIR!!!
+            if self.board[r][c-1] == "--" and self.board[r][c-2] == "--" and self.board[r][c-3] == "--":
+                if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c+2):
+                    moves.append(Move((r, c), (r, c-2), self.board, castleMove=True))
 
     '''
     Returns if the player is in check, a list of pins, and a list of checks

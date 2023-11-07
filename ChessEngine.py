@@ -47,7 +47,7 @@ class GameState():
     Make the move that is passed as a parameter
     '''
     def makeMove(self, move):
-        print("WKS: " + str(self.currentCastlingRight.wks) + " " + str(self.currentCastlingRight.wqs))
+        #print("WKS: " + str(self.currentCastlingRight.wks) + " " + str(self.currentCastlingRight.wqs))
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.board[move.startRow][move.startCol] = "--"
         self.moveLog.append(move) #log the move so we can undo it later

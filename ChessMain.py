@@ -5,11 +5,15 @@ This is our main driver file. Responsible for handling user input and displaying
 import pygame as p
 import ChessEngine, SmartMoveFinder
 
+# Z to redo move, R to restart game
 WIDTH = HEIGHT = 512 #400 another option
 DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15 #for animation later on
 IMAGES = {}
+IS_PLAYER_ONE_HUMAN = True #if a human playing white, this is true, if AI, this is False
+IS_PLAYER_TWO_HUMAN = True #same as above but for black
+MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
 
 '''
 Initialize a global dictionary of images, called exacly once in the main
@@ -38,8 +42,8 @@ def main():
     sqSelected = () #no square is selected, keep track of the last click of user
     playerClicks = [] #keep track of player clicks (two tuples: [(6, 4), (4, 4)])
     gameOver = False
-    playerOne = False #if a human playing white, this is true, if AI, this is False
-    playerTwo = False #same as above but for black
+    playerOne = IS_PLAYER_ONE_HUMAN 
+    playerTwo = IS_PLAYER_TWO_HUMAN 
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
@@ -59,7 +63,7 @@ def main():
                         playerClicks.append(sqSelected) #append for both, first and second click
                     if len(playerClicks) == 2: #after senond click
                         move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
-                        print(move.getChessNotation())
+                        #print(move.getChessNotation())
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:
                                 gs.makeMove(validMoves[i])
@@ -82,9 +86,11 @@ def main():
                     playerClicks = []
                     moveMade = False
                     animate = False
+                    gameOver = False
 
         #AI move finder
         if not gameOver and not humanTurn:
+            AIMove = SmartMoveFinder.findBestMove(gs.board)
             AIMove = SmartMoveFinder.findRandomMove(validMoves)
             gs.makeMove(AIMove)
             moveMade = True
@@ -110,7 +116,7 @@ def main():
             gameOver = True
             drawText(screen, 'Stalemate')
 
-        if gameOver and not playerOne and not playerTwo or timer > 300: #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
+        if gameOver and not playerOne and not playerTwo or (timer > MAXIMUM_MOVES and MAXIMUM_MOVES != 0): #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
             gs = ChessEngine.GameState()
             validMoves = gs.getValidMoves()
             sqSelected = ()
@@ -120,8 +126,9 @@ def main():
             gameOver = False
             timer = 0 #TEMPORARY
 
-        print(timer)
-        timer += 1 #TEMPORARY
+        if MAXIMUM_MOVES != 0:
+            print(timer)
+            timer += 1 #TEMPORARY
         clock.tick(MAX_FPS)
         p.display.flip()
 

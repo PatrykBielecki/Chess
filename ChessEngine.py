@@ -16,14 +16,14 @@ class GameState():
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
         # self.board = [
-        #     ["--", "--", "--", "--", "--", "--", "--", "bK"],
-        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["wQ", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+        #     ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
         #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-        #     ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "wp", "wp", "wp", "--", "--"],
+        #     ["--", "--", "--", "wQ", "wK", "--", "--", "--"]]
         self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
                               'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves }
 
@@ -47,6 +47,7 @@ class GameState():
     Make the move that is passed as a parameter
     '''
     def makeMove(self, move):
+        print("WKS: " + str(self.currentCastlingRight.wks) + " " + str(self.currentCastlingRight.wqs))
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.board[move.startRow][move.startCol] = "--"
         self.moveLog.append(move) #log the move so we can undo it later
@@ -121,11 +122,11 @@ class GameState():
     '''
     def updateCastleRights(self, move):
         if move.pieceMoved == "wK":
-            self.currentCastlingRight.wks == False
-            self.currentCastlingRight.wqs == False
+            self.currentCastlingRight.wks = False
+            self.currentCastlingRight.wqs = False
         elif move.pieceMoved == "bK":
-            self.currentCastlingRight.bks == False
-            self.currentCastlingRight.bqs == False
+            self.currentCastlingRight.bks = False
+            self.currentCastlingRight.bqs = False
         elif move.pieceMoved == "wR":
             if move.startRow == 7:
                 if move.startCol == 0: #left rook

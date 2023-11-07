@@ -1,8 +1,5 @@
 import random
 
-
-
-
 def findRandomMove(validMoves):
  #   for i in range(len(validMoves)):
         #if validMoves[i].pieceCaptured != "--":

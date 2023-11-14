@@ -6,7 +6,8 @@ import pygame as p
 import ChessEngine, SmartMoveFinder
 
 # Z to redo move, R to restart game
-WIDTH = HEIGHT = 512 #400 another option
+HEIGHT = 512 #400 another option
+WIDTH = HEIGHT * 2 #one half of game window responsible for board, second for menu
 DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15 #for animation later on
@@ -55,24 +56,25 @@ def main():
                     location = p.mouse.get_pos() #(x, y) location of mouse
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
-                    if sqSelected == (row, col): #the uset clicked same twice
-                        sqSelected = () #deselect
-                        playerClicks = [] #clear player clicks
-                    else:
-                        sqSelected = (row, col)
-                        playerClicks.append(sqSelected) #append for both, first and second click
-                    if len(playerClicks) == 2: #after senond click
-                        move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
-                        #print(move.getChessNotation())
-                        for i in range(len(validMoves)):
-                            if move == validMoves[i]:
-                                gs.makeMove(validMoves[i])
-                                moveMade = True
-                                animate = True
-                                sqSelected = () #reset user clicks
-                                playerClicks = []
-                        if not moveMade:
-                            playerClicks = [sqSelected]
+                    if col < 8 and row < 8: #handling case when mouseclick is not on board
+                        if sqSelected == (row, col): #the uset clicked same twice
+                            sqSelected = () #deselect
+                            playerClicks = [] #clear player clicks
+                        else:
+                            sqSelected = (row, col)
+                            playerClicks.append(sqSelected) #append for both, first and second click
+                        if len(playerClicks) == 2: #after senond click
+                            move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                            #print(move.getChessNotation())
+                            for i in range(len(validMoves)):
+                                if move == validMoves[i]:
+                                    gs.makeMove(validMoves[i])
+                                    moveMade = True
+                                    animate = True
+                                    sqSelected = () #reset user clicks
+                                    playerClicks = []
+                            if not moveMade:
+                                playerClicks = [sqSelected]
             #key handler
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z: #undo when 'z' pressed

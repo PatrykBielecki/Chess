@@ -10,11 +10,11 @@ HEIGHT = 512 #400 another option
 WIDTH = HEIGHT * 2 #one half of game window responsible for board, second for menu
 DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = HEIGHT // DIMENSION
-MAX_FPS = 15 #for animation later on
+MAX_FPS = 2000 #for animation later on
 IMAGES = {}
-IS_PLAYER_ONE_HUMAN = True #if a human playing white, this is true, if AI, this is False
-IS_PLAYER_TWO_HUMAN = True #same as above but for black
-MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
+IS_PLAYER_ONE_HUMAN = False #if a human playing white, this is true, if AI, this is False
+IS_PLAYER_TWO_HUMAN = False #same as above but for black
+MAXIMUM_MOVES = 60 #maximum amount of moves for both of players, set 0 to disable
 
 '''
 Initialize a global dictionary of images, called exacly once in the main
@@ -92,8 +92,8 @@ def main():
 
         #AI move finder
         if not gameOver and not humanTurn:
-            AIMove = SmartMoveFinder.findBestMove(gs.board)
-            AIMove = SmartMoveFinder.findRandomMove(validMoves)
+            AIMove = SmartMoveFinder.findBestMove(gs, validMoves)
+            #AIMove = SmartMoveFinder.findRandomMove(validMoves)
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
@@ -129,7 +129,7 @@ def main():
             timer = 0 #TEMPORARY
 
         if MAXIMUM_MOVES != 0:
-            print(timer)
+            #print(timer)
             timer += 1 #TEMPORARY
         clock.tick(MAX_FPS)
         p.display.flip()

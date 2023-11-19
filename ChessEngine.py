@@ -20,6 +20,7 @@ class GameState():
                               'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves }
 
         self.moveNumber = 0
+        self.fiftyMoveRuleCounter = 0
 
         self.whiteToMove = True
         self.moveLog = []

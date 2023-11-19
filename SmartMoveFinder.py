@@ -71,25 +71,28 @@ def traslateToFEN(game_state):
         result += ' w '
     else:
         result += ' b '
-    # castlingRights = game_state.currentCastlingRight
-    # if (castlingRights.wks and castlingRights.wqs and castlingRights.bks and castlingRights.bqs):
-    #     '-'
-    # else:
-    #     if (castlingRights.wks):
-    #         result += 'K'
-    #     if (castlingRights.wqs):
-    #         result += 'Q'
-    #     if (castlingRights.bks):
-    #         result += 'k'
-    #     if (castlingRights.bqs):
-    #         result += 'q'
+
+    #castle rights in FEN notation
+    if not (castlingRights.wks or castlingRights.wqs or castlingRights.bks or castlingRights.bqs):
+        result += ' - '
+    if (castlingRights.wks):
+        result += 'K'
+    if (castlingRights.wqs):
+        result += 'Q'
+    if (castlingRights.bks):
+        result += 'k'
+    if (castlingRights.bqs):
+        result += 'q'
 
     #result += 'KQkq - 0 1' # TODO fifty-move rule + enpasant?
 
-    result += ' - - 0 ' # TODO fifty-move rule + enpasant?
+    result += ' - ' # TODO fifty-move rule + enpasant?
 
-    result += str(game_state.moveNumber)
+    result += str(game_state.fiftyMoveRuleCounter) #fifty-move rule
+    
+    result += ' '
 
+    result += str(game_state.moveNumber) 
     #print(result)
     #print(StockfishEngine.notationValidation())
     

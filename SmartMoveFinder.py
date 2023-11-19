@@ -90,7 +90,10 @@ def traslateToFEN(game_state):
 
     result += ' - ' # TODO fifty-move rule + enpasant?
 
-    result += str(game_state.fiftyMoveRuleCounter) #fifty-move rule
+    if(game_state.fiftyMoveRuleCounter > 0):   
+        result += str(int(game_state.fiftyMoveRuleCounter)) #fifty-move rule
+    else:
+        result += str(game_state.fiftyMoveRuleCounter)
     
     result += ' '
 

@@ -1,5 +1,4 @@
 import random
-import StockfishEngine
 import chess
 import chess.engine
 
@@ -83,11 +82,11 @@ def traslateToFEN(game_state):
     #     if (castlingRights.bks):
     #         result += 'k'
     #     if (castlingRights.bqs):
-    #         result += 'a'
+    #         result += 'q'
 
-    #result += 'KQkq - 0 1' # TODO fifty-move rule and counting moves + enpasant?
+    #result += 'KQkq - 0 1' # TODO fifty-move rule + enpasant?
 
-    result += ' - - 0 ' # TODO fifty-move rule and counting moves + enpasant?
+    result += ' - - 0 ' # TODO fifty-move rule + enpasant?
 
     result += str(game_state.moveNumber)
 

@@ -15,15 +15,7 @@ class GameState():
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
-        # self.board = [
-        #     ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-        #     ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "wp", "wp", "wp", "--", "--"],
-        #     ["--", "--", "--", "wQ", "wK", "--", "--", "--"]]
+
         self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
                               'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves }
 
@@ -191,6 +183,7 @@ class GameState():
             if self.inCheck:
                 self.checkmate = True
             else:
+                # TODO stalemate on repeated moves
                 self.stalemate = True
         return moves
 
@@ -537,6 +530,7 @@ class Move():
         #castle move
         self.castleMove = castleMove
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
+        self.isCapture = self.pieceCaptured != "--"
 
     '''
     Overriding the equals method
@@ -547,8 +541,46 @@ class Move():
         return False
 
     def getChessNotation(self):
-        #todo: try to make more like chess notation
-        return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(self.endRow, self.endCol)
+        if self.pawnPromotion:
+            return self.getRankFile(self.endRow, self.endCol) + "Q"
+        if self.castleMove:
+            if self.endCol == 1:
+                return "0-0-0"
+            else:
+                return "0-0"
+        if self.enPassant:
+            return self.getRankFile(self.startRow, self.startCol)[0] + "x" + self.getRankFile(self.endRow,
+                                                                                                self.endCol) + " e.p."
+        if self.pieceCaptured != "--":
+            if self.pieceMoved[1] == "p":
+                return self.getRankFile(self.startRow, self.startCol)[0] + "x" + self.getRankFile(self.endRow,
+                                                                                                    self.endCol)
+            else:
+                return self.pieceMoved[1] + "x" + self.getRankFile(self.endRow, self.endCol)
+        else:
+            if self.pieceMoved[1] == "p":
+                return self.getRankFile(self.endRow, self.endCol)
+            else:
+                return self.pieceMoved[1] + self.getRankFile(self.endRow, self.endCol)
+
+        # TODO Disambiguating moves
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowsToRanks[r]
+    
+    def __str__(self):
+        if self.castleMove:
+            return "0-0" if self.endCol == 6 else "0-0-0"
+
+        endSquare = self.getRankFile(self.endRow, self.endCol)
+
+        if self.pieceMoved[1] == "p":
+            if self.isCapture:
+                return self.colsToFiles[self.startCol] + "x" + endSquare
+            else:
+                return endSquare + "Q" if self.isPawnPromotion else endSquare
+
+        move_string = self.pieceMoved[1]
+        if self.isCapture:
+            move_string += "x"
+        return move_string + endSquare

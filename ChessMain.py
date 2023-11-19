@@ -6,11 +6,15 @@ import pygame as p
 import ChessEngine, SmartMoveFinder
 
 # Z to redo move, R to restart game
-HEIGHT = 512 #400 another option
-WIDTH = HEIGHT * 2 #one half of game window responsible for board, second for menu
+BOARD_HEIGHT = 512 #400 another option
+BOARD_WIDTH = BOARD_HEIGHT #one half of game window responsible for board, second for menu
+MOVE_LOG_PANEL_WIDTH = 300
+MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
+MENU_PANEL_WIDTH = MOVE_LOG_PANEL_WIDTH
+MENU_PANEL_HEIGHT = 150
 DIMENSION = 8 #dimensions of chess board are 8x8
-SQ_SIZE = HEIGHT // DIMENSION
-MAX_FPS = 2000 #for animation later on
+SQ_SIZE = BOARD_HEIGHT // DIMENSION
+MAX_FPS = 60 #for animation later on
 IMAGES = {}
 IS_PLAYER_ONE_HUMAN = False #if a human playing white, this is true, if AI, this is False
 IS_PLAYER_TWO_HUMAN = False #same as above but for black
@@ -31,13 +35,14 @@ The main driver for our code, This will handle user input and update graphics
 def main():
     p.init()
     timer = 0 #TEMPORARY
-    screen = p.display.set_mode((WIDTH, HEIGHT))
+    screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.GameState()
     validMoves = gs.getValidMoves()
     moveMade = False #flag variable for when the move is made
     animate = False #flag variable for when to animate
+    moveLogFont = p.font.SysFont("Arial", 14, False, False)
     loadImages() #only once
     running = True
     sqSelected = () #no square is selected, keep track of the last click of user
@@ -45,6 +50,7 @@ def main():
     gameOver = False
     playerOne = IS_PLAYER_ONE_HUMAN 
     playerTwo = IS_PLAYER_TWO_HUMAN 
+
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
@@ -65,7 +71,6 @@ def main():
                             playerClicks.append(sqSelected) #append for both, first and second click
                         if len(playerClicks) == 2: #after senond click
                             move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
-                            #print(move.getChessNotation())
                             for i in range(len(validMoves)):
                                 if move == validMoves[i]:
                                     gs.makeMove(validMoves[i])
@@ -107,16 +112,27 @@ def main():
 
         drawGameState(screen, gs, validMoves, sqSelected)
 
+        if not gameOver:
+            drawMoveLog(screen, gs, moveLogFont)
+            mouse_pos = p.mouse.get_pos()
+            click = False
+            for event in p.event.get():
+                if event.type == p.QUIT:
+                    running = False
+                elif event.type == p.MOUSEBUTTONDOWN:
+                    click = True
+            drawMenu(screen, mouse_pos, click)
+
         if gs.checkmate:
             gameOver = True
             if gs.whiteToMove:
-                drawText(screen, 'Black win by checkmate')
+                drawEndGameText(screen, 'Black win by checkmate')
             else:
-                drawText(screen, 'White win by checkmate')
+                drawEndGameText(screen, 'White win by checkmate')
 
         elif gs.stalemate:
             gameOver = True
-            drawText(screen, 'Stalemate')
+            drawEndGameText(screen, 'Stalemate')
 
         if gameOver and not playerOne and not playerTwo or (timer > MAXIMUM_MOVES and MAXIMUM_MOVES != 0): #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
             gs = ChessEngine.GameState()
@@ -181,6 +197,127 @@ def drawPieces(screen, board):
             if piece != "--": #not empty square
                 screen.blit(IMAGES[piece], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
+
+def drawMoveLog(screen, gameState, font):
+    """
+    Draws the move log.
+    """
+    moveLogRect = p.Rect(BOARD_WIDTH, MENU_PANEL_HEIGHT, MOVE_LOG_PANEL_WIDTH, MOVE_LOG_PANEL_HEIGHT - MENU_PANEL_HEIGHT)
+    p.draw.rect(screen, p.Color('black'), moveLogRect)
+    moveLog = gameState.moveLog
+    moveTexts = []
+    for i in range(0, len(moveLog), 2):
+        moveString = str(i // 2 + 1) + '. ' + str(moveLog[i]) + " "
+        if i + 1 < len(moveLog):
+            moveString += str(moveLog[i + 1]) + "  "
+        moveTexts.append(moveString)
+
+    movesPerRow = 4
+    padding = 5
+    lineSpacing = 2
+    textY = padding
+    for i in range(0, len(moveTexts), movesPerRow):
+        text = ""
+        for j in range(movesPerRow):
+            if i + j < len(moveTexts):
+                text += moveTexts[i + j]
+
+        textObject = font.render(text, True, p.Color('white'))
+        textLocation = moveLogRect.move(padding, textY)
+        screen.blit(textObject, textLocation)
+        textY += textObject.get_height() + lineSpacing
+
+
+
+
+
+
+
+
+
+
+
+def drawMenu(screen, mouse_pos, click):
+    """
+    Draws game menu and handles button clicks.
+    """
+    moveLogRect = p.Rect(BOARD_WIDTH, 0, MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT)
+    p.draw.rect(screen, p.Color('gray'), moveLogRect)
+
+    # Button dimensions and positions
+    button_width = 30
+    button_height = 30
+    button_margin = 10
+    total_buttons_width = 3 * button_width + 2 * button_margin
+
+    # Calculate the starting X-coordinate to center the buttons
+    button_x = BOARD_WIDTH + (MENU_PANEL_WIDTH - total_buttons_width) // 2
+    button_y = button_margin
+
+    # Load and resize button images
+    reset_image = p.image.load("images/refresh_button.png")
+    reset_image = p.transform.scale(reset_image, (button_width, button_height))
+
+    undo_image = p.image.load("images/undo_button.png")
+    undo_image = p.transform.scale(undo_image, (button_width, button_height))
+
+    mute_image = p.image.load("images/mute_button.png")
+    mute_image = p.transform.scale(mute_image, (button_width, button_height))
+
+    # Draw Reset button
+    reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    reset_hover = reset_button_rect.collidepoint(mouse_pos)
+
+    # Draw the button with a hover effect
+    p.draw.rect(screen, p.Color('lightgray' if reset_hover else 'white'), reset_button_rect)
+    p.draw.rect(screen, p.Color('black'), reset_button_rect, 2)  # Add border
+    screen.blit(reset_image, (button_x, button_y))  # Draw image
+
+    # Draw Undo button
+    undo_button_rect = p.Rect(button_x + button_width + button_margin, button_y, button_width, button_height)
+    undo_hover = undo_button_rect.collidepoint(mouse_pos)
+
+    # Draw the button with a hover effect
+    p.draw.rect(screen, p.Color('lightgray' if undo_hover else 'white'), undo_button_rect)
+    p.draw.rect(screen, p.Color('black'), undo_button_rect, 2)  # Add border
+    screen.blit(undo_image, (button_x + button_width + button_margin, button_y))  # Draw image
+
+    # Draw Mute button
+    mute_button_rect = p.Rect(button_x + 2 * (button_width + button_margin), button_y, button_width, button_height)
+    mute_hover = mute_button_rect.collidepoint(mouse_pos)
+
+    # Draw the button with a hover effect
+    p.draw.rect(screen, p.Color('lightgray' if mute_hover else 'white'), mute_button_rect)
+    p.draw.rect(screen, p.Color('black'), mute_button_rect, 2)  # Add border
+    screen.blit(mute_image, (button_x + 2 * (button_width + button_margin), button_y))  # Draw image
+
+    # Line spacer
+    line_rect = p.Rect(BOARD_WIDTH, button_y + button_height + button_margin, MENU_PANEL_WIDTH, 2)
+    p.draw.rect(screen, p.Color('black'), line_rect)
+
+    # Check for button clicks
+    if reset_hover and click:
+        print("Reset button clicked!")
+        # Add your reset button logic here
+
+    if undo_hover and click:
+        print("Undo button clicked!")
+        # Add your undo button logic here
+
+    if mute_hover and click:
+        print("Mute button clicked!")
+        # Add your mute button logic here
+
+
+
+
+
+
+
+
+
+
+
 '''
 Animating a move
 '''
@@ -204,16 +341,16 @@ def animateMove(move, screen, board, clock):
         #draw moving piece
         screen.blit(IMAGES[move.pieceMoved], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
         p.display.flip()
-        clock.tick(60)
+        clock.tick(MAX_FPS)
 
 
-def drawText(screen, text):
-    font = p.font.SysFont("Helvitca", 32, True, False)
-    textObject = font.render(text, 0, p.Color('Gray'))
-    textLocation = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH/2 - textObject.get_width()/2, HEIGHT/2 - textObject.get_height()/2)
-    screen.blit(textObject, textLocation)
-    textObject = font.render(text, 0, p.Color("Black"))
-    screen.blit(textObject, textLocation.move(2, 2))
+def drawEndGameText(screen, text):
+    font = p.font.SysFont("Helvetica", 32, True, False)
+    text_object = font.render(text, False, p.Color("gray"))
+    text_location = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move(BOARD_WIDTH / 2 - text_object.get_width() / 2, BOARD_HEIGHT / 2 - text_object.get_height() / 2)
+    screen.blit(text_object, text_location)
+    text_object = font.render(text, False, p.Color('black'))
+    screen.blit(text_object, text_location.move(2, 2))
 
 if __name__ == "__main__":
     main()

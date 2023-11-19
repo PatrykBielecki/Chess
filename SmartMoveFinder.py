@@ -72,6 +72,8 @@ def traslateToFEN(game_state):
     else:
         result += ' b '
 
+    castlingRights = game_state.currentCastlingRight
+
     #castle rights in FEN notation
     if not (castlingRights.wks or castlingRights.wqs or castlingRights.bks or castlingRights.bqs):
         result += ' - '

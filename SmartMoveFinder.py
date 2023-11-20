@@ -14,6 +14,7 @@ def findRandomMove(validMoves):
             return validMoves[i]        
     return validMoves[random.randint(0, len(validMoves)-1)]
 
+
 def findBestMove(game_state, validMoves):
     bestMove = get_best_move(traslateToFEN(game_state))
     startCol = ord(bestMove[0]) - ord('a')
@@ -46,7 +47,6 @@ def findBestMove(game_state, validMoves):
 
 
 def traslateToFEN(game_state):
-    #print(board)
     result = ""
     for i in range(len(game_state.board)):
         empty = 0
@@ -86,9 +86,16 @@ def traslateToFEN(game_state):
     if (castlingRights.bqs):
         result += 'q'
 
-    #result += 'KQkq - 0 1' # TODO fifty-move rule + enpasant?
+    result += ' '
 
-    result += ' - ' # TODO fifty-move rule + enpasant?
+    if(game_state.enPassantPossible): # enpasant
+        enPassantCol = chr(game_state.enPassantPossible[1] + ord('a'))
+        enPassantRow = ((int(game_state.enPassantPossible[0]) - 1) - 7) * -1
+        result += enPassantCol + str(enPassantRow)
+    else:
+        result += '-' 
+
+    result += ' '
 
     if(game_state.fiftyMoveRuleCounter > 0):   
         result += str(int(game_state.fiftyMoveRuleCounter)) #fifty-move rule
@@ -98,8 +105,6 @@ def traslateToFEN(game_state):
     result += ' '
 
     result += str(game_state.moveNumber) 
-    #print(result)
-    #print(StockfishEngine.notationValidation())
     
     return result
 

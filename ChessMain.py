@@ -8,17 +8,19 @@ import ChessEngine, SmartMoveFinder
 # Z to redo move, R to restart game
 BOARD_HEIGHT = 512 #400 another option
 BOARD_WIDTH = BOARD_HEIGHT #one half of game window responsible for board, second for menu
-MOVE_LOG_PANEL_WIDTH = 300
+MOVE_LOG_PANEL_WIDTH = 450
 MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
 MENU_PANEL_WIDTH = MOVE_LOG_PANEL_WIDTH
-MENU_PANEL_HEIGHT = 150
+MENU_PANEL_HEIGHT = 200
 DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = BOARD_HEIGHT // DIMENSION
 MAX_FPS = 60 #for animation later on
 IMAGES = {}
-IS_PLAYER_ONE_HUMAN = False #if a human playing white, this is true, if AI, this is False
+IS_PLAYER_ONE_HUMAN = True #if a human playing white, this is true, if AI, this is False
 IS_PLAYER_TWO_HUMAN = False #same as above but for black
-MAXIMUM_MOVES = 60 #maximum amount of moves for both of players, set 0 to disable
+MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
+engineSelectedBlack = 'STOCKFISH'
+engineSelectedWhite = 'STOCKFISH'
 
 '''
 Initialize a global dictionary of images, called exacly once in the main
@@ -52,6 +54,16 @@ def main():
     playerTwo = IS_PLAYER_TWO_HUMAN 
 
     while running:
+
+        mouse_pos = p.mouse.get_pos()
+        click = False
+        for event in p.event.get():
+            if event.type == p.QUIT:
+                running = False
+            elif event.type == p.MOUSEBUTTONDOWN:
+                click = True
+        drawMenu(screen, mouse_pos, click)
+
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
             if e.type == p.QUIT:
@@ -94,6 +106,8 @@ def main():
                     moveMade = False
                     animate = False
                     gameOver = False
+                    print("Black engine: " + engineSelectedBlack)
+                    print("White engine: " + engineSelectedWhite)
 
         #AI move finder
         if not gameOver and not humanTurn:
@@ -114,14 +128,6 @@ def main():
 
         if not gameOver:
             drawMoveLog(screen, gs, moveLogFont)
-            mouse_pos = p.mouse.get_pos()
-            click = False
-            for event in p.event.get():
-                if event.type == p.QUIT:
-                    running = False
-                elif event.type == p.MOUSEBUTTONDOWN:
-                    click = True
-            drawMenu(screen, mouse_pos, click)
 
         if gs.checkmate:
             gameOver = True
@@ -207,12 +213,12 @@ def drawMoveLog(screen, gameState, font):
     moveLog = gameState.moveLog
     moveTexts = []
     for i in range(0, len(moveLog), 2):
-        moveString = str(i // 2 + 1) + '. ' + str(moveLog[i]) + " "
+        moveString = str(i // 2 + 1) + '.' + str(moveLog[i]) + " "
         if i + 1 < len(moveLog):
-            moveString += str(moveLog[i + 1]) + "  "
+            moveString += str(moveLog[i + 1]) + "   "
         moveTexts.append(moveString)
 
-    movesPerRow = 4
+    movesPerRow = 6
     padding = 5
     lineSpacing = 2
     textY = padding
@@ -236,19 +242,19 @@ def drawMoveLog(screen, gameState, font):
 
 
 
-
 def drawMenu(screen, mouse_pos, click):
     """
     Draws game menu and handles button clicks.
     """
+    speed_value = 1
     moveLogRect = p.Rect(BOARD_WIDTH, 0, MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT)
     p.draw.rect(screen, p.Color('gray'), moveLogRect)
 
     # Button dimensions and positions
     button_width = 30
     button_height = 30
-    button_margin = 10
-    total_buttons_width = 3 * button_width + 2 * button_margin
+    button_margin = 5
+    total_buttons_width = 6 * button_width + 5 * button_margin
 
     # Calculate the starting X-coordinate to center the buttons
     button_x = BOARD_WIDTH + (MENU_PANEL_WIDTH - total_buttons_width) // 2
@@ -264,49 +270,204 @@ def drawMenu(screen, mouse_pos, click):
     mute_image = p.image.load("images/mute_button.png")
     mute_image = p.transform.scale(mute_image, (button_width, button_height))
 
+    plus_image = p.image.load("images/plus_button.png")
+    plus_image = p.transform.scale(plus_image, (button_width, button_height))
+
+    minus_image = p.image.load("images/minus_button.png")
+    minus_image = p.transform.scale(minus_image, (button_width, button_height))
+
     # Draw Reset button
     reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    reset_hover = reset_button_rect.collidepoint(mouse_pos)
-
-    # Draw the button with a hover effect
-    p.draw.rect(screen, p.Color('lightgray' if reset_hover else 'white'), reset_button_rect)
+    # Draw the button without a hover effect
+    p.draw.rect(screen, p.Color('white'), reset_button_rect)
     p.draw.rect(screen, p.Color('black'), reset_button_rect, 2)  # Add border
     screen.blit(reset_image, (button_x, button_y))  # Draw image
 
     # Draw Undo button
     undo_button_rect = p.Rect(button_x + button_width + button_margin, button_y, button_width, button_height)
-    undo_hover = undo_button_rect.collidepoint(mouse_pos)
-
-    # Draw the button with a hover effect
-    p.draw.rect(screen, p.Color('lightgray' if undo_hover else 'white'), undo_button_rect)
+    # Draw the button without a hover effect
+    p.draw.rect(screen, p.Color('white'), undo_button_rect)
     p.draw.rect(screen, p.Color('black'), undo_button_rect, 2)  # Add border
     screen.blit(undo_image, (button_x + button_width + button_margin, button_y))  # Draw image
 
     # Draw Mute button
     mute_button_rect = p.Rect(button_x + 2 * (button_width + button_margin), button_y, button_width, button_height)
-    mute_hover = mute_button_rect.collidepoint(mouse_pos)
-
-    # Draw the button with a hover effect
-    p.draw.rect(screen, p.Color('lightgray' if mute_hover else 'white'), mute_button_rect)
+    # Draw the button without a hover effect
+    p.draw.rect(screen, p.Color('white'), mute_button_rect)
     p.draw.rect(screen, p.Color('black'), mute_button_rect, 2)  # Add border
     screen.blit(mute_image, (button_x + 2 * (button_width + button_margin), button_y))  # Draw image
 
-    # Line spacer
+    # Draw Decrease Speed button
+    decrease_speed_button_rect = p.Rect(button_x + 3 * (button_width + button_margin), button_y, button_width, button_height)
+    # Draw the button without a hover effect
+    p.draw.rect(screen, p.Color('white'), decrease_speed_button_rect)
+    p.draw.rect(screen, p.Color('black'), decrease_speed_button_rect, 2)  # Add border
+    screen.blit(minus_image, (button_x + 3 * (button_width + button_margin), button_y))  # Draw image
+
+    # Draw Increase Speed button
+    increase_speed_button_rect = p.Rect(button_x + 5 * (button_width + button_margin) + button_margin * 2, button_y, button_width, button_height)
+    # Draw the button without a hover effect
+    p.draw.rect(screen, p.Color('white'), increase_speed_button_rect)
+    p.draw.rect(screen, p.Color('black'), increase_speed_button_rect, 2)  # Add border
+    screen.blit(plus_image, (button_x + 5 * (button_width + button_margin) + button_margin * 2, button_y))  # Draw image
+
+    # Line spacer between buttons and sections
     line_rect = p.Rect(BOARD_WIDTH, button_y + button_height + button_margin, MENU_PANEL_WIDTH, 2)
     p.draw.rect(screen, p.Color('black'), line_rect)
 
+    # Vertical line to create two sections
+    vertical_line_rect = p.Rect(BOARD_WIDTH + MENU_PANEL_WIDTH // 2, button_y + button_height + button_margin, 2, MENU_PANEL_HEIGHT - (button_y + button_height + button_margin))
+    p.draw.rect(screen, p.Color('black'), vertical_line_rect)
+
+    # Headers for sections
+    font = p.font.Font(None, 24)
+    white_text = font.render('WHITE', True, p.Color('white'))
+    black_text = font.render('BLACK', True, p.Color('black'))
+    screen.blit(white_text, (BOARD_WIDTH + 10, button_y + button_height + button_margin * 2))
+    screen.blit(black_text, (BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10, button_y + button_height + button_margin * 2))
+
+    # Button names and functions for each section
+    white_buttons = [{'name': 'human', 'function': handle_human_click_white}, {'name': 'random', 'function': handle_random_click_white},
+                    {'name': 'negamax', 'function': handle_negamax_click_white}, {'name': 'lc0', 'function': handle_lc0_click_white},
+                    {'name': 'allie', 'function': handle_allie_click_white}, {'name': 'stockfish', 'function': handle_stockfish_click_white}]
+
+    black_buttons = [{'name': 'human', 'function': handle_human_click_black}, {'name': 'random', 'function': handle_random_click_black},
+                    {'name': 'negamax', 'function': handle_negamax_click_black}, {'name': 'lc0', 'function': handle_lc0_click_black},
+                    {'name': 'allie', 'function': handle_allie_click_black}, {'name': 'stockfish', 'function': handle_stockfish_click_black}]
+
+    # Draw buttons below the WHITE section in two columns
+    for i, button_info in enumerate(white_buttons):
+        button_width = 100  # Set the desired width for the buttons
+        button_height = 30  # Set the desired height for the buttons
+        col = i % 2  # Determine the column (0 or 1)
+        row = i // 2  # Determine the row
+        button_rect = p.Rect(BOARD_WIDTH + 10 + col * (button_width + button_margin * 2),
+                            button_y + button_height + button_margin * 3 + font.get_height() + row * (button_height + button_margin),
+                            button_width, button_height)
+        p.draw.rect(screen, p.Color('white'), button_rect)
+        p.draw.rect(screen, p.Color('black'), button_rect, 2)  # Add border
+        button_text = font.render(button_info['name'], True, p.Color('black'))
+        screen.blit(button_text, (button_rect.x + button_width // 2 - button_text.get_width() // 2,
+                                button_rect.y + button_height // 2 - button_text.get_height() // 2))
+
+        # Check for button clicks
+        if button_rect.collidepoint(mouse_pos) and click:
+            button_info['function']()
+
+    # Draw buttons below the BLACK section in two columns
+    for i, button_info in enumerate(black_buttons):
+        button_width = 100  # Set the desired width for the buttons
+        button_height = 30  # Set the desired height for the buttons
+        col = i % 2  # Determine the column (0 or 1)
+        row = i // 2  # Determine the row
+        button_rect = p.Rect(BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10 + col * (button_width + button_margin * 2),
+                            button_y + button_height + button_margin * 3 + font.get_height() + row * (button_height + button_margin),
+                            button_width, button_height)
+        p.draw.rect(screen, p.Color('black'), button_rect)
+        p.draw.rect(screen, p.Color('white'), button_rect, 2)  # Add border
+        button_text = font.render(button_info['name'], True, p.Color('white'))
+        screen.blit(button_text, (button_rect.x + button_width // 2 - button_text.get_width() // 2,
+                                button_rect.y + button_height // 2 - button_text.get_height() // 2))
+
+    # Draw buttons below the BLACK section in two columns
+    for i, button_info in enumerate(black_buttons):
+        button_width = 100  # Set the desired width for the buttons
+        button_height = 30  # Set the desired height for the buttons
+        col = i % 2  # Determine the column (0 or 1)
+        row = i // 2  # Determine the row
+        button_rect = p.Rect(BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10 + col * (button_width + button_margin * 2),
+                            button_y + button_height + button_margin * 3 + font.get_height() + row * (button_height + button_margin),
+                            button_width, button_height)
+        p.draw.rect(screen, p.Color('black'), button_rect)
+        p.draw.rect(screen, p.Color('white'), button_rect, 2)  # Add border
+        button_text = font.render(button_info['name'], True, p.Color('white'))
+        screen.blit(button_text, (button_rect.x + button_width // 2 - button_text.get_width() // 2,
+                                button_rect.y + button_height // 2 - button_text.get_height() // 2))
+
+        # Check for button clicks
+        if button_rect.collidepoint(mouse_pos) and click:
+            button_info['function']()
+
     # Check for button clicks
-    if reset_hover and click:
-        print("Reset button clicked!")
-        # Add your reset button logic here
+    if click:
+        if reset_button_rect.collidepoint(mouse_pos):
+            print("Reset button clicked!")
+            # Add your reset button logic here
 
-    if undo_hover and click:
-        print("Undo button clicked!")
-        # Add your undo button logic here
+        if undo_button_rect.collidepoint(mouse_pos):
+            print("Undo button clicked!")
+            # Add your undo button logic here
 
-    if mute_hover and click:
-        print("Mute button clicked!")
-        # Add your mute button logic here
+        if mute_button_rect.collidepoint(mouse_pos):
+            print("Mute button clicked!")
+            # Add your mute button logic here
+
+        if decrease_speed_button_rect.collidepoint(mouse_pos):
+            print("Decrease Speed button clicked!")
+            # Subtract 0.5 from the speed value
+            speed_value -= 0.5
+            # Make sure the speed doesn't go below 0.5
+            speed_value = max(0.5, speed_value)
+
+        if increase_speed_button_rect.collidepoint(mouse_pos):
+            print("Increase Speed button clicked!")
+            # Add 0.5 to the speed value
+            speed_value += 0.5
+            # Make sure the speed doesn't go above 3.0
+            speed_value = min(3.0, speed_value)
+
+    # Render and draw updated speed text
+    speed_text = font.render(f'{int(speed_value)}.0x', True, p.Color('black'))
+    screen.blit(speed_text, (button_x + 4 * (button_width + button_margin) + button_margin, button_y + button_margin))
+
+
+
+
+# Button functions
+def handle_human_click_white():
+    global engineSelectedWhite
+    engineSelectedWhite = 'HUMAN'
+
+def handle_random_click_white():
+    global engineSelectedWhite
+    engineSelectedWhite = 'RANDOM'
+
+def handle_negamax_click_white():
+    print("Handling NEGAMAX click white")
+
+def handle_lc0_click_white():
+    print("Handling LC0 click white")
+
+def handle_allie_click_white():
+    print("Handling ALLIE click white")
+
+def handle_stockfish_click_white():
+    global engineSelectedWhite
+    engineSelectedWhite = 'STOCKFISH'
+
+def handle_human_click_black():
+    global engineSelectedBlack
+    engineSelectedBlack = 'HUMAN'
+
+def handle_random_click_black():
+    global engineSelectedBlack
+    engineSelectedBlack = 'RANDOM'
+
+def handle_negamax_click_black():
+    print("Handling NEGAMAX click black")
+
+def handle_lc0_click_black():
+    print("Handling LC0 click black")
+
+def handle_allie_click_black():
+    print("Handling ALLIE click black")
+
+def handle_stockfish_click_black():
+    global engineSelectedBlack
+    engineSelectedBlack = 'STOCKFISH'
+
+
+
 
 
 
@@ -351,6 +512,7 @@ def drawEndGameText(screen, text):
     screen.blit(text_object, text_location)
     text_object = font.render(text, False, p.Color('black'))
     screen.blit(text_object, text_location.move(2, 2))
+
 
 if __name__ == "__main__":
     main()

@@ -56,22 +56,9 @@ class GameState():
             self.blackKingLocation = (move.endRow, move.endCol)
         #enpassant move
         if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2: #only on 2 square pawn advances
-            if(move.pieceMoved[0] == 'w'):
-                if(move.endCol >= 0 and move.endCol < 7 ):
-                    if(self.board[move.endRow][move.endCol + 1] == 'wp'):
-                        self.enPassantPossible = ((move.endRow + move.startRow)//2, move.endCol)
-                if(move.endCol <= 7 and move.endCol > 0 ):
-                    if(self.board[move.endRow][move.endCol - 1] == 'wp'):
-                        self.enPassantPossible = ((move.endRow + move.startRow)//2, move.endCol)                      
-            else:
-                if(move.endCol >= 0 and move.endCol < 7 ):
-                    if(self.board[move.endRow][move.endCol + 1] == 'bp'):
-                        self.enPassantPossible = ((move.endRow + move.startRow)//2, move.endCol)
-                if(move.endCol <= 7 and move.endCol > 0 ):
-                    if(self.board[move.endRow][move.endCol - 1] == 'bp'):
-                        self.enPassantPossible = ((move.endRow + move.startRow)//2, move.endCol)                                    
-else:
-    self.enPassantSquare = ()
+            self.enPassantPossible = ((move.endRow + move.startRow)//2, move.endCol)                                
+        else:
+            self.enPassantPossible = ()
         if move.enPassant:
             self.board[move.startRow][move.endCol] = "--" #capturing the pawn        
         #pawn promotion

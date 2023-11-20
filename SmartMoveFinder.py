@@ -16,7 +16,10 @@ def findRandomMove(validMoves):
 
 
 def findBestMove(game_state, validMoves):
-    bestMove = get_best_move(traslateToFEN(game_state))
+    if (game_state.whiteToMove): 
+        bestMove = getLc0Move(traslateToFEN(game_state))
+    else: 
+        bestMove = getStockfishMove(traslateToFEN(game_state))
     startCol = ord(bestMove[0]) - ord('a')
     startRow = ((int(bestMove[1]) - 1) - 7) * -1
     endCol = ord(bestMove[2]) - ord('a')
@@ -110,7 +113,7 @@ def traslateToFEN(game_state):
 
 
 
-def get_best_move(fen, depth=10):
+def getStockfishMove(fen, depth=3):
     # Set the path to your Stockfish executable
     stockfish_path = "StockfishSrc/stockfish-windows-x86-64-avx2.exe"
 
@@ -120,7 +123,25 @@ def get_best_move(fen, depth=10):
     # Create a Stockfish engine
     with chess.engine.SimpleEngine.popen_uci(stockfish_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(depth=depth))
+        result = engine.play(board, chess.engine.Limit(random.uniform(0.1, 2.0)))
+
+        # Get the best move
+        best_move = result.move
+
+    #print(best_move.uci())
+    return best_move.uci()
+    
+def getLc0Move(fen, depth=3):
+    # Set the path to your Lc0 executable
+    lc0_path = "Lc0Src\lc0.exe"
+
+    # Create a chess.Board object from the FEN string
+    board = chess.Board(fen)
+
+    # Create a Lc0 engine
+    with chess.engine.SimpleEngine.popen_uci(lc0_path) as engine:
+        # Set the position on the board
+        result = engine.play(board, chess.engine.Limit(random.uniform(0.1, 2.0)))
 
         # Get the best move
         best_move = result.move

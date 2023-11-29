@@ -2,24 +2,23 @@ import random
 import chess
 import chess.engine
 
-def findRandomMove(validMoves):
-    for i in range(len(validMoves)):
-        if validMoves[i].pieceCaptured == "wQ":
-            return validMoves[i]
-        elif validMoves[i].pieceCaptured == "wR":
-            return validMoves[i]
-        elif validMoves[i].pieceCaptured == "wB" or validMoves[i].pieceCaptured == "wN":
-            return validMoves[i]
-        elif validMoves[i].pieceCaptured != "--":
-            return validMoves[i]        
-    return validMoves[random.randint(0, len(validMoves)-1)]
-
-
-def findBestMove(game_state, validMoves):
+def useEngine(game_state, validMoves, engineWhite, engineBlack):
+    translatedFEN = traslateToFEN(game_state)
+    bestMove = ''
+    print(game_state.whiteToMove, engineWhite, engineBlack)
     if (game_state.whiteToMove): 
-        bestMove = getLc0Move(traslateToFEN(game_state))
-    else: 
-        bestMove = getStockfishMove(traslateToFEN(game_state))
+        if (engineWhite == 'MINMAX'):       return findMinmaxMove(validMoves)
+        elif (engineWhite == 'NEGAMAX'):    return findMinmaxMove(validMoves) # TODO use NEGAMAX!
+        elif (engineWhite == 'LC0'):        bestMove = getLc0Move(translatedFEN)
+        elif (engineWhite == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN)
+        elif (engineWhite == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN)
+    else:
+        if (engineBlack == 'MINMAX'):       return findMinmaxMove(validMoves)
+        elif (engineBlack == 'NEGAMAX'):    return findMinmaxMove(validMoves) # TODO use NEGAMAX!
+        elif (engineBlack == 'LC0'):        bestMove = getLc0Move(translatedFEN)
+        elif (engineBlack == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN)
+        elif (engineBlack == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN)
+
     startCol = ord(bestMove[0]) - ord('a')
     startRow = ((int(bestMove[1]) - 1) - 7) * -1
     endCol = ord(bestMove[2]) - ord('a')
@@ -45,9 +44,19 @@ def findBestMove(game_state, validMoves):
         print("---------------------------------------------------------------------------")
         print("---------------------------------------------------------------------------")
         print("---------------------------------------------------------------------------")
-        return findRandomMove(validMoves)
-    
+        return findMinmaxMove(validMoves)
 
+def findMinmaxMove(validMoves):
+    for i in range(len(validMoves)):
+        if validMoves[i].pieceCaptured == "wQ":
+            return validMoves[i]
+        elif validMoves[i].pieceCaptured == "wR":
+            return validMoves[i]
+        elif validMoves[i].pieceCaptured == "wB" or validMoves[i].pieceCaptured == "wN":
+            return validMoves[i]
+        elif validMoves[i].pieceCaptured != "--":
+            return validMoves[i]        
+    return validMoves[random.randint(0, len(validMoves)-1)]
 
 def traslateToFEN(game_state):
     result = ""
@@ -123,7 +132,25 @@ def getStockfishMove(fen, depth=3):
     # Create a Stockfish engine
     with chess.engine.SimpleEngine.popen_uci(stockfish_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(random.uniform(0.1, 2.0)))
+        result = engine.play(board, chess.engine.Limit(time = random.uniform(0.1, 0.5)))
+
+        # Get the best move
+        best_move = result.move
+
+    #print(best_move.uci())
+    return best_move.uci()
+    
+def getFatFritz2Move(fen, depth=3):
+    # Set the path to your Lc0 executable
+    fatFritz2_path = 'FatFritz2\FatFritz2.exe'
+
+    # Create a chess.Board object from the FEN string
+    board = chess.Board(fen)
+
+    # Create a Lc0 engine
+    with chess.engine.SimpleEngine.popen_uci(fatFritz2_path) as engine:
+        # Set the position on the board
+        result = engine.play(board, chess.engine.Limit(time = random.uniform(0.1, 0.5)))
 
         # Get the best move
         best_move = result.move
@@ -141,11 +168,10 @@ def getLc0Move(fen, depth=3):
     # Create a Lc0 engine
     with chess.engine.SimpleEngine.popen_uci(lc0_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(random.uniform(0.1, 2.0)))
+        result = engine.play(board, chess.engine.Limit(time = random.uniform(0.1, 0.5)))
 
         # Get the best move
         best_move = result.move
 
     #print(best_move.uci())
     return best_move.uci()
-    

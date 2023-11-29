@@ -14,13 +14,14 @@ MENU_PANEL_WIDTH = MOVE_LOG_PANEL_WIDTH
 MENU_PANEL_HEIGHT = 200
 DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = BOARD_HEIGHT // DIMENSION
-MAX_FPS = 60 #for animation later on
+MAX_FPS = 120 #for animation later on
 IMAGES = {}
-IS_PLAYER_ONE_HUMAN = False #if a human playing white, this is true, if AI, this is False
-IS_PLAYER_TWO_HUMAN = False #same as above but for black
 MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
-engineSelectedBlack = 'STOCKFISH'
-engineSelectedWhite = 'STOCKFISH'
+engineSelectedBlack = 'HUMAN'
+engineSelectedWhite = 'HUMAN'
+soundOn = True
+resetGame = False
+undoMove = False
 
 '''
 Initialize a global dictionary of images, called exacly once in the main
@@ -38,7 +39,6 @@ def main():
     p.init()
     timer = 0 #TEMPORARY
     screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
-    clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.GameState()
     validMoves = gs.getValidMoves()
@@ -50,28 +50,24 @@ def main():
     sqSelected = () #no square is selected, keep track of the last click of user
     playerClicks = [] #keep track of player clicks (two tuples: [(6, 4), (4, 4)])
     gameOver = False
-    playerOne = IS_PLAYER_ONE_HUMAN 
-    playerTwo = IS_PLAYER_TWO_HUMAN 
+    p.mixer.init()
+    p.mixer.music.load('sounds/move.mp3')
+    global resetGame
+    global undoMove
+    global soundOn
 
     while running:
 
-        mouse_pos = p.mouse.get_pos()
-        click = False
-        for event in p.event.get():
-            if event.type == p.QUIT:
-                running = False
-            elif event.type == p.MOUSEBUTTONDOWN:
-                click = True
-        drawMenu(screen, mouse_pos, click)
-
-        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
+        drawMenu(screen, (0, 0), False)
+        humanTurn = (gs.whiteToMove and engineSelectedWhite == 'HUMAN') or (not gs.whiteToMove and engineSelectedBlack == 'HUMAN')
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             #mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos() #(x, y) location of mouse
+                drawMenu(screen, location, True) # draw menu from function
                 if not gameOver and humanTurn:
-                    location = p.mouse.get_pos() #(x, y) location of mouse
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
                     if col < 8 and row < 8: #handling case when mouseclick is not on board
@@ -92,34 +88,34 @@ def main():
                                     playerClicks = []
                             if not moveMade:
                                 playerClicks = [sqSelected]
-            #key handler
-            elif e.type == p.KEYDOWN:
-                if e.key == p.K_z: #undo when 'z' pressed
-                    gs.undoMove()
-                    moveMade = True
-                    animate = False
-                if e.key == p.K_r: #reset the board when 'r' is pressed
-                    gs = ChessEngine.GameState()
-                    validMoves = gs.getValidMoves()
-                    sqSelected = ()
-                    playerClicks = []
-                    moveMade = False
-                    animate = False
-                    gameOver = False
-                    print("Black engine: " + engineSelectedBlack)
-                    print("White engine: " + engineSelectedWhite)
+
+            if undoMove:
+                undoMove = False
+                gs.undoMove()
+                moveMade = True
+                animate = False
+            if resetGame:
+                resetGame = False
+                gs = ChessEngine.GameState()
+                validMoves = gs.getValidMoves()
+                sqSelected = ()
+                playerClicks = []
+                moveMade = False
+                animate = False
+                gameOver = False
 
         #AI move finder
         if not gameOver and not humanTurn:
-            AIMove = SmartMoveFinder.findBestMove(gs, validMoves)
-            #AIMove = SmartMoveFinder.findRandomMove(validMoves)
+            AIMove = SmartMoveFinder.useEngine(gs, validMoves, engineSelectedWhite, engineSelectedBlack)
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
 
         if moveMade:
             if animate:
-                animateMove(gs.moveLog[-1], screen, gs.board, clock)
+                if (soundOn):
+                    p.mixer.music.play()
+                animateMove(gs.moveLog[-1], screen, gs.board)
             validMoves = gs.getValidMoves()
             moveMade = False
             animate = False
@@ -140,7 +136,7 @@ def main():
             gameOver = True
             drawEndGameText(screen, 'Stalemate')
 
-        if gameOver and not playerOne and not playerTwo or (timer > MAXIMUM_MOVES and MAXIMUM_MOVES != 0): #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
+        if gameOver and not engineSelectedWhite == 'HUMAN' and not engineSelectedBlack == 'HUMAN' or (timer > MAXIMUM_MOVES and MAXIMUM_MOVES != 0): #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
             gs = ChessEngine.GameState()
             validMoves = gs.getValidMoves()
             sqSelected = ()
@@ -153,7 +149,7 @@ def main():
         if MAXIMUM_MOVES != 0:
             #print(timer)
             timer += 1 #TEMPORARY
-        clock.tick(MAX_FPS)
+
         p.display.flip()
 
 '''
@@ -242,74 +238,57 @@ def drawMoveLog(screen, gameState, font):
 
 
 
+
+
+
+
+
+
+
+
+
 def drawMenu(screen, mouse_pos, click):
     """
     Draws game menu and handles button clicks.
     """
-    speed_value = 1
+    global soundOn
     moveLogRect = p.Rect(BOARD_WIDTH, 0, MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT)
     p.draw.rect(screen, p.Color('gray'), moveLogRect)
 
     # Button dimensions and positions
-    button_width = 30
-    button_height = 30
+    button_width = 50
+    button_height = 50
     button_margin = 5
     total_buttons_width = 6 * button_width + 5 * button_margin
 
     # Calculate the starting X-coordinate to center the buttons
-    button_x = BOARD_WIDTH + (MENU_PANEL_WIDTH - total_buttons_width) // 2
+    button_x = BOARD_WIDTH + button_margin * 2
     button_y = button_margin
 
     # Load and resize button images
-    reset_image = p.image.load("images/refresh_button.png")
+    reset_image = p.image.load("images/restart.png")
     reset_image = p.transform.scale(reset_image, (button_width, button_height))
 
-    undo_image = p.image.load("images/undo_button.png")
+    undo_image = p.image.load("images/undo.png")
     undo_image = p.transform.scale(undo_image, (button_width, button_height))
 
-    mute_image = p.image.load("images/mute_button.png")
-    mute_image = p.transform.scale(mute_image, (button_width, button_height))
-
-    plus_image = p.image.load("images/plus_button.png")
-    plus_image = p.transform.scale(plus_image, (button_width, button_height))
-
-    minus_image = p.image.load("images/minus_button.png")
-    minus_image = p.transform.scale(minus_image, (button_width, button_height))
+    if (soundOn):
+        sound_image = p.image.load("images/unmute.png")
+    else:
+        sound_image = p.image.load("images/mute.png")
+    sound_image = p.transform.scale(sound_image, (button_width, button_height))
 
     # Draw Reset button
     reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    # Draw the button without a hover effect
-    p.draw.rect(screen, p.Color('white'), reset_button_rect)
-    p.draw.rect(screen, p.Color('black'), reset_button_rect, 2)  # Add border
     screen.blit(reset_image, (button_x, button_y))  # Draw image
 
     # Draw Undo button
     undo_button_rect = p.Rect(button_x + button_width + button_margin, button_y, button_width, button_height)
-    # Draw the button without a hover effect
-    p.draw.rect(screen, p.Color('white'), undo_button_rect)
-    p.draw.rect(screen, p.Color('black'), undo_button_rect, 2)  # Add border
     screen.blit(undo_image, (button_x + button_width + button_margin, button_y))  # Draw image
 
     # Draw Mute button
-    mute_button_rect = p.Rect(button_x + 2 * (button_width + button_margin), button_y, button_width, button_height)
-    # Draw the button without a hover effect
-    p.draw.rect(screen, p.Color('white'), mute_button_rect)
-    p.draw.rect(screen, p.Color('black'), mute_button_rect, 2)  # Add border
-    screen.blit(mute_image, (button_x + 2 * (button_width + button_margin), button_y))  # Draw image
-
-    # Draw Decrease Speed button
-    decrease_speed_button_rect = p.Rect(button_x + 3 * (button_width + button_margin), button_y, button_width, button_height)
-    # Draw the button without a hover effect
-    p.draw.rect(screen, p.Color('white'), decrease_speed_button_rect)
-    p.draw.rect(screen, p.Color('black'), decrease_speed_button_rect, 2)  # Add border
-    screen.blit(minus_image, (button_x + 3 * (button_width + button_margin), button_y))  # Draw image
-
-    # Draw Increase Speed button
-    increase_speed_button_rect = p.Rect(button_x + 5 * (button_width + button_margin) + button_margin * 2, button_y, button_width, button_height)
-    # Draw the button without a hover effect
-    p.draw.rect(screen, p.Color('white'), increase_speed_button_rect)
-    p.draw.rect(screen, p.Color('black'), increase_speed_button_rect, 2)  # Add border
-    screen.blit(plus_image, (button_x + 5 * (button_width + button_margin) + button_margin * 2, button_y))  # Draw image
+    sound_button_rect = p.Rect(button_x + 2 * (button_width + button_margin), button_y, button_width, button_height)
+    screen.blit(sound_image, (button_x + 2 * (button_width + button_margin), button_y))  # Draw image
 
     # Line spacer between buttons and sections
     line_rect = p.Rect(BOARD_WIDTH, button_y + button_height + button_margin, MENU_PANEL_WIDTH, 2)
@@ -327,13 +306,13 @@ def drawMenu(screen, mouse_pos, click):
     screen.blit(black_text, (BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10, button_y + button_height + button_margin * 2))
 
     # Button names and functions for each section
-    white_buttons = [{'name': 'human', 'function': handle_human_click_white}, {'name': 'random', 'function': handle_random_click_white},
+    white_buttons = [{'name': 'human', 'function': handle_human_click_white}, {'name': 'minmax', 'function': handle_minmax_click_white},
                     {'name': 'negamax', 'function': handle_negamax_click_white}, {'name': 'lc0', 'function': handle_lc0_click_white},
-                    {'name': 'allie', 'function': handle_allie_click_white}, {'name': 'stockfish', 'function': handle_stockfish_click_white}]
+                    {'name': 'fatFritz2', 'function': handle_fatFritz2_click_white}, {'name': 'stockfish', 'function': handle_stockfish_click_white}]
 
-    black_buttons = [{'name': 'human', 'function': handle_human_click_black}, {'name': 'random', 'function': handle_random_click_black},
+    black_buttons = [{'name': 'human', 'function': handle_human_click_black}, {'name': 'minmax', 'function': handle_minmax_click_black},
                     {'name': 'negamax', 'function': handle_negamax_click_black}, {'name': 'lc0', 'function': handle_lc0_click_black},
-                    {'name': 'allie', 'function': handle_allie_click_black}, {'name': 'stockfish', 'function': handle_stockfish_click_black}]
+                    {'name': 'fatFritz2', 'function': handle_fatFritz2_click_black}, {'name': 'stockfish', 'function': handle_stockfish_click_black}]
 
     # Draw buttons below the WHITE section in two columns
     for i, button_info in enumerate(white_buttons):
@@ -391,87 +370,98 @@ def drawMenu(screen, mouse_pos, click):
     # Check for button clicks
     if click:
         if reset_button_rect.collidepoint(mouse_pos):
-            print("Reset button clicked!")
-            # Add your reset button logic here
+            global resetGame
+            resetGame = True
 
         if undo_button_rect.collidepoint(mouse_pos):
-            print("Undo button clicked!")
-            # Add your undo button logic here
+            global undoMove
+            undoMove = True
 
-        if mute_button_rect.collidepoint(mouse_pos):
-            print("Mute button clicked!")
-            # Add your mute button logic here
-
-        if decrease_speed_button_rect.collidepoint(mouse_pos):
-            print("Decrease Speed button clicked!")
-            # Subtract 0.5 from the speed value
-            speed_value -= 0.5
-            # Make sure the speed doesn't go below 0.5
-            speed_value = max(0.5, speed_value)
-
-        if increase_speed_button_rect.collidepoint(mouse_pos):
-            print("Increase Speed button clicked!")
-            # Add 0.5 to the speed value
-            speed_value += 0.5
-            # Make sure the speed doesn't go above 3.0
-            speed_value = min(3.0, speed_value)
-
-    # Render and draw updated speed text
-    speed_text = font.render(f'{int(speed_value)}.0x', True, p.Color('black'))
-    screen.blit(speed_text, (button_x + 4 * (button_width + button_margin) + button_margin, button_y + button_margin))
+        if sound_button_rect.collidepoint(mouse_pos):
+            # Button dimensions and positions
+            soundOn = not soundOn
+                
 
 
 
 
-# Button functions
+
+
+
+
+# biale
 def handle_human_click_white():
     global engineSelectedWhite
     engineSelectedWhite = 'HUMAN'
+    global resetGame
+    resetGame = True
 
-def handle_random_click_white():
+def handle_minmax_click_white():
     global engineSelectedWhite
-    engineSelectedWhite = 'RANDOM'
+    engineSelectedWhite = 'MINMAX'
+    global resetGame
+    resetGame = True
 
 def handle_negamax_click_white():
-    print("Handling NEGAMAX click white")
+    global engineSelectedWhite
+    engineSelectedWhite = 'NEGAMAX'
+    global resetGame
+    resetGame = True
 
 def handle_lc0_click_white():
-    print("Handling LC0 click white")
+    global engineSelectedWhite
+    engineSelectedWhite = 'LC0'
+    global resetGame
+    resetGame = True
 
-def handle_allie_click_white():
-    print("Handling ALLIE click white")
+def handle_fatFritz2_click_white():
+    global engineSelectedWhite
+    engineSelectedWhite = 'FATFRITZ2'
+    global resetGame
+    resetGame = True
 
 def handle_stockfish_click_white():
     global engineSelectedWhite
     engineSelectedWhite = 'STOCKFISH'
+    global resetGame
+    resetGame = True
 
+#czarne
 def handle_human_click_black():
     global engineSelectedBlack
     engineSelectedBlack = 'HUMAN'
+    global resetGame
+    resetGame = True
 
-def handle_random_click_black():
+def handle_minmax_click_black():
     global engineSelectedBlack
-    engineSelectedBlack = 'RANDOM'
+    engineSelectedBlack = 'MINMAX'
+    global resetGame
+    resetGame = True
 
 def handle_negamax_click_black():
-    print("Handling NEGAMAX click black")
+    global engineSelectedBlack
+    engineSelectedBlack = 'NEGAMAX'
+    global resetGame
+    resetGame = True
 
 def handle_lc0_click_black():
-    print("Handling LC0 click black")
+    global engineSelectedBlack
+    engineSelectedBlack = 'LC0'
+    global resetGame
+    resetGame = True
 
-def handle_allie_click_black():
-    print("Handling ALLIE click black")
+def handle_fatFritz2_click_black():
+    global engineSelectedBlack
+    engineSelectedBlack = 'FATFRITZ2'
+    global resetGame
+    resetGame = True
 
 def handle_stockfish_click_black():
     global engineSelectedBlack
     engineSelectedBlack = 'STOCKFISH'
-
-
-
-
-
-
-
+    global resetGame
+    resetGame = True
 
 
 
@@ -482,11 +472,13 @@ def handle_stockfish_click_black():
 '''
 Animating a move
 '''
-def animateMove(move, screen, board, clock):
+def animateMove(move, screen, board):
+    clock = p.time.Clock()
+    clock.tick(MAX_FPS)
     global colors
     dR = move.endRow - move.startRow
     dC = move.endCol - move.startCol
-    framesPerSquare = 3 #frames to move one square
+    framesPerSquare = 6 #frames to move one square
     frameCount = (abs(dR) + abs(dC)) * framesPerSquare
     for frame in range(frameCount + 1):
         r, c = (move.startRow + dR*frame/frameCount, move.startCol + dC*frame/frameCount)

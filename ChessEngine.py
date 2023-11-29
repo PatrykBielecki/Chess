@@ -27,8 +27,8 @@ class GameState():
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
 
-        self.checkmate = False #not implemented
-        self.stalemate = False #not implemented
+        self.checkmate = False
+        self.stalemate = False
 
         self.inCheck = False
         self.pins = []
@@ -180,11 +180,12 @@ class GameState():
                 self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
             else:
                 self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
+        if len(self.moveLog) >= 9 and self.moveLog[-1] == self.moveLog[-5] == self.moveLog[-9]: # TODO simple stalemate, does not include complex posssibility
+            self.stalemate = True
         if len(moves) == 0:
             if self.inCheck:
                 self.checkmate = True
             else:
-                # TODO stalemate on repeated moves
                 self.stalemate = True
         return moves
 

@@ -16,7 +16,8 @@ DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = BOARD_HEIGHT // DIMENSION
 MAX_FPS = 120 #for animation later on
 IMAGES = {}
-MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
+MAXIMUM_MOVES = 200 #maximum amount of moves for both of players, set 0 to disable
+LOG_FILE_PATH = "log.txt" # SILNIK_BIALY SILNIK_CZARNY 0/1/2 -> 0-whiteWin 1-BlackWin 2-stalemate 
 engineSelectedBlack = 'HUMAN'
 engineSelectedWhite = 'HUMAN'
 soundOn = True
@@ -126,14 +127,21 @@ def main():
             drawMoveLog(screen, gs, moveLogFont)
 
         if gs.checkmate:
-            gameOver = True
+            gameOver = True            
             if gs.whiteToMove:
+                with open(LOG_FILE_PATH, "a") as log_file:
+                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '1' +'\n')
                 drawEndGameText(screen, 'Black win by checkmate')
             else:
+                with open(LOG_FILE_PATH, "a") as log_file:
+                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '0' +'\n')
                 drawEndGameText(screen, 'White win by checkmate')
 
         elif gs.stalemate:
+            with open(LOG_FILE_PATH, "a") as log_file:
+                log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '2' +'\n')
             gameOver = True
+
             drawEndGameText(screen, 'Stalemate')
 
         if gameOver and not engineSelectedWhite == 'HUMAN' and not engineSelectedBlack == 'HUMAN' or (timer > MAXIMUM_MOVES and MAXIMUM_MOVES != 0): #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
@@ -259,7 +267,6 @@ def drawMenu(screen, mouse_pos, click):
     button_width = 50
     button_height = 50
     button_margin = 5
-    total_buttons_width = 6 * button_width + 5 * button_margin
 
     # Calculate the starting X-coordinate to center the buttons
     button_x = BOARD_WIDTH + button_margin * 2
@@ -299,11 +306,7 @@ def drawMenu(screen, mouse_pos, click):
     p.draw.rect(screen, p.Color('black'), vertical_line_rect)
 
     # Headers for sections
-    font = p.font.Font(None, 24)
-    white_text = font.render('WHITE', True, p.Color('white'))
-    black_text = font.render('BLACK', True, p.Color('black'))
-    screen.blit(white_text, (BOARD_WIDTH + 10, button_y + button_height + button_margin * 2))
-    screen.blit(black_text, (BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10, button_y + button_height + button_margin * 2))
+    font = p.font.SysFont('calibri', 20)
 
     # Button names and functions for each section
     white_buttons = [{'name': 'human', 'function': handle_human_click_white}, {'name': 'minmax', 'function': handle_minmax_click_white},
@@ -323,11 +326,14 @@ def drawMenu(screen, mouse_pos, click):
         button_rect = p.Rect(BOARD_WIDTH + 10 + col * (button_width + button_margin * 2),
                             button_y + button_height + button_margin * 3 + font.get_height() + row * (button_height + button_margin),
                             button_width, button_height)
-        p.draw.rect(screen, p.Color('white'), button_rect)
+        if (button_info['name'].upper() == engineSelectedWhite):
+            p.draw.rect(screen, p.Color('#50C878'), button_rect)
+        else:
+            p.draw.rect(screen, p.Color('white'), button_rect)
         p.draw.rect(screen, p.Color('black'), button_rect, 2)  # Add border
         button_text = font.render(button_info['name'], True, p.Color('black'))
         screen.blit(button_text, (button_rect.x + button_width // 2 - button_text.get_width() // 2,
-                                button_rect.y + button_height // 2 - button_text.get_height() // 2))
+                                button_rect.y + button_height // 2 - button_text.get_height() // 2 + 4))
 
         # Check for button clicks
         if button_rect.collidepoint(mouse_pos) and click:
@@ -342,30 +348,41 @@ def drawMenu(screen, mouse_pos, click):
         button_rect = p.Rect(BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10 + col * (button_width + button_margin * 2),
                             button_y + button_height + button_margin * 3 + font.get_height() + row * (button_height + button_margin),
                             button_width, button_height)
-        p.draw.rect(screen, p.Color('black'), button_rect)
+        if (button_info['name'].upper() == engineSelectedBlack):
+            p.draw.rect(screen, p.Color('#50C878'), button_rect)
+        else:
+            p.draw.rect(screen, p.Color('black'), button_rect)
         p.draw.rect(screen, p.Color('white'), button_rect, 2)  # Add border
         button_text = font.render(button_info['name'], True, p.Color('white'))
         screen.blit(button_text, (button_rect.x + button_width // 2 - button_text.get_width() // 2,
-                                button_rect.y + button_height // 2 - button_text.get_height() // 2))
-
-    # Draw buttons below the BLACK section in two columns
-    for i, button_info in enumerate(black_buttons):
-        button_width = 100  # Set the desired width for the buttons
-        button_height = 30  # Set the desired height for the buttons
-        col = i % 2  # Determine the column (0 or 1)
-        row = i // 2  # Determine the row
-        button_rect = p.Rect(BOARD_WIDTH + MENU_PANEL_WIDTH // 2 + 10 + col * (button_width + button_margin * 2),
-                            button_y + button_height + button_margin * 3 + font.get_height() + row * (button_height + button_margin),
-                            button_width, button_height)
-        p.draw.rect(screen, p.Color('black'), button_rect)
-        p.draw.rect(screen, p.Color('white'), button_rect, 2)  # Add border
-        button_text = font.render(button_info['name'], True, p.Color('white'))
-        screen.blit(button_text, (button_rect.x + button_width // 2 - button_text.get_width() // 2,
-                                button_rect.y + button_height // 2 - button_text.get_height() // 2))
+                                button_rect.y + button_height // 2 - button_text.get_height() // 2 + 4))
 
         # Check for button clicks
         if button_rect.collidepoint(mouse_pos) and click:
             button_info['function']()
+
+    # buttons to change engine properties
+    button_x = BOARD_WIDTH + 5 * 2
+    button_y = 170
+    # Button dimensions and positions
+    button_width = 50
+    button_height = 50
+
+    # Load and resize button images
+    minus_time_white_button_image = p.image.load("images/minus.png")
+    # Draw Reset button
+    minus_time_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(minus_time_white_button_image, (button_x, button_y))  # Draw image
+
+    button_x = button_x + 70
+    # Load and resize button images
+    plus_time_white_button_image = p.image.load("images/plus.png")
+    # Draw Reset button
+    plus_time_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(plus_time_white_button_image, (button_x, button_y))  # Draw image
+
+    # white_depth_text
+    
 
     # Check for button clicks
     if click:
@@ -380,6 +397,12 @@ def drawMenu(screen, mouse_pos, click):
         if sound_button_rect.collidepoint(mouse_pos):
             # Button dimensions and positions
             soundOn = not soundOn
+
+        if minus_time_white_button_rect.collidepoint(mouse_pos):
+            print("minus_time_white_button_rect")
+
+        if plus_time_white_button_rect.collidepoint(mouse_pos):
+            print("plus_time_white_button_rect")
                 
 
 

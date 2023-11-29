@@ -23,6 +23,8 @@ engineSelectedWhite = 'HUMAN'
 soundOn = True
 resetGame = False
 undoMove = False
+engineParameters = [3, 3, 3, 3]
+
 
 '''
 Initialize a global dictionary of images, called exacly once in the main
@@ -66,6 +68,7 @@ def main():
                 running = False
             #mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
+                print(engineParameters)
                 location = p.mouse.get_pos() #(x, y) location of mouse
                 drawMenu(screen, location, True) # draw menu from function
                 if not gameOver and humanTurn:
@@ -260,6 +263,7 @@ def drawMenu(screen, mouse_pos, click):
     Draws game menu and handles button clicks.
     """
     global soundOn
+    global engineParameters
     moveLogRect = p.Rect(BOARD_WIDTH, 0, MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT)
     p.draw.rect(screen, p.Color('gray'), moveLogRect)
 
@@ -368,20 +372,60 @@ def drawMenu(screen, mouse_pos, click):
     button_width = 50
     button_height = 50
 
+    #  TODO make button ojects and normal sizes logic (more responsive)
+
+    ### WHITE BUTTONS ENGINE
     # Load and resize button images
     minus_time_white_button_image = p.image.load("images/minus.png")
     # Draw Reset button
     minus_time_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
     screen.blit(minus_time_white_button_image, (button_x, button_y))  # Draw image
 
-    button_x = button_x + 70
+    button_x += 70
     # Load and resize button images
     plus_time_white_button_image = p.image.load("images/plus.png")
     # Draw Reset button
     plus_time_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
     screen.blit(plus_time_white_button_image, (button_x, button_y))  # Draw image
 
-    # white_depth_text
+    button_x += 40
+    minus_depth_white_button_image = p.image.load("images/minus.png")
+    # Draw Reset button
+    minus_depth_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(minus_depth_white_button_image, (button_x, button_y))  # Draw image
+
+    button_x += 70
+    plus_depth_white_button_image = p.image.load("images/plus.png")
+    # Draw Reset button
+    plus_depth_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(plus_depth_white_button_image, (button_x, button_y))  # Draw image
+
+
+    ### BLACK BUTTONS ENGINE
+    # Load and resize button images
+    minus_time_black_button_image = p.image.load("images/minus.png")
+    # Draw Reset button
+    minus_time_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(minus_time_black_button_image, (button_x, button_y))  # Draw image
+
+    button_x += 70
+    # Load and resize button images
+    plus_time_black_button_image = p.image.load("images/plus.png")
+    # Draw Reset button
+    plus_time_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(plus_time_black_button_image, (button_x, button_y))  # Draw image
+
+    button_x += 40
+    minus_depth_black_button_image = p.image.load("images/minus.png")
+    # Draw Reset button
+    minus_depth_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(minus_depth_black_button_image, (button_x, button_y))  # Draw image
+
+    button_x += 70
+    plus_depth_black_button_image = p.image.load("images/plus.png")
+    # Draw Reset button
+    plus_depth_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(plus_depth_black_button_image, (button_x, button_y))  # Draw image
     
 
     # Check for button clicks
@@ -399,14 +443,22 @@ def drawMenu(screen, mouse_pos, click):
             soundOn = not soundOn
 
         if minus_time_white_button_rect.collidepoint(mouse_pos):
-            print("minus_time_white_button_rect")
+            engineParameters[0] -= 1
 
         if plus_time_white_button_rect.collidepoint(mouse_pos):
-            print("plus_time_white_button_rect")
+            engineParameters[0] += 1
+
+        if minus_depth_white_button_rect.collidepoint(mouse_pos):
+            engineParameters[1] -= 1
+
+        if plus_depth_white_button_rect.collidepoint(mouse_pos):
+            engineParameters[1] += 1
+
+        
                 
 
-
-
+def updateEngineParameters(index, ):
+    global engineParameters
 
 
 

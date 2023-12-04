@@ -17,7 +17,7 @@ class GameState():
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
 
         self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
-                              'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves }
+                                'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves }
 
         self.moveNumber = 0
         self.fiftyMoveRuleCounter = 0
@@ -64,7 +64,7 @@ class GameState():
         #pawn promotion
         if move.isPawnPromotion:
             #promotedPiece = input("Promote to Q, R, B or N:")
-            promotedPiece = 'Q' #TO REPAIR!!!!
+            promotedPiece = 'p' #TO REPAIR!!!!
             self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
 
         #castle move

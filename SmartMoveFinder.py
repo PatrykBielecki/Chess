@@ -2,21 +2,21 @@ import random
 import chess
 import chess.engine
 
-def useEngine(game_state, validMoves, engineWhite, engineBlack):
+def useEngine(game_state, validMoves, engineWhite, engineBlack, searchTime):
     translatedFEN = traslateToFEN(game_state)
     bestMove = ''
     if (game_state.whiteToMove): 
         if (engineWhite == 'MINMAX'):       return findMinmaxMove(validMoves)
         elif (engineWhite == 'NEGAMAX'):    return getNegaMaxMove(game_state, validMoves)
-        elif (engineWhite == 'LC0'):        bestMove = getLc0Move(translatedFEN)
-        elif (engineWhite == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN)
-        elif (engineWhite == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN)
+        elif (engineWhite == 'LC0'):        bestMove = getLc0Move(translatedFEN, searchTime)
+        elif (engineWhite == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN, searchTime)
+        elif (engineWhite == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN, searchTime)
     else:
         if (engineBlack == 'MINMAX'):       return findMinmaxMove(validMoves)
         elif (engineBlack == 'NEGAMAX'):    return getNegaMaxMove(game_state, validMoves)
-        elif (engineBlack == 'LC0'):        bestMove = getLc0Move(translatedFEN)
-        elif (engineBlack == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN)
-        elif (engineBlack == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN)
+        elif (engineBlack == 'LC0'):        bestMove = getLc0Move(translatedFEN, searchTime)
+        elif (engineBlack == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN, searchTime)
+        elif (engineBlack == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN, searchTime)
 
     startCol = ord(bestMove[0]) - ord('a')
     startRow = ((int(bestMove[1]) - 1) - 7) * -1
@@ -121,7 +121,7 @@ def traslateToFEN(game_state):
 
 
 
-def getStockfishMove(fen, depth=3):
+def getStockfishMove(fen, searchTime):
     # Set the path to your Stockfish executable
     stockfish_path = "StockfishSrc/stockfish-windows-x86-64-avx2.exe"
 
@@ -131,7 +131,7 @@ def getStockfishMove(fen, depth=3):
     # Create a Stockfish engine
     with chess.engine.SimpleEngine.popen_uci(stockfish_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(time = random.uniform(0.5, 2)))
+        result = engine.play(board, chess.engine.Limit(time = searchTime))
 
         # Get the best move
         best_move = result.move
@@ -139,7 +139,7 @@ def getStockfishMove(fen, depth=3):
     #print(best_move.uci())
     return best_move.uci()
     
-def getFatFritz2Move(fen, depth=3):
+def getFatFritz2Move(fen, searchTime):
     # Set the path to your Lc0 executable
     fatFritz2_path = 'FatFritz2\FatFritz2.exe'
 
@@ -149,7 +149,7 @@ def getFatFritz2Move(fen, depth=3):
     # Create a Lc0 engine
     with chess.engine.SimpleEngine.popen_uci(fatFritz2_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(time = random.uniform(0.5, 2)))
+        result = engine.play(board, chess.engine.Limit(time = searchTime))
 
         # Get the best move
         best_move = result.move
@@ -157,22 +157,16 @@ def getFatFritz2Move(fen, depth=3):
     #print(best_move.uci())
     return best_move.uci()
     
-def getLc0Move(fen, depth=3):
+def getLc0Move(fen, searchTime):
     # Set the path to your Lc0 executable
     lc0_path = "Lc0Src\lc0.exe"
-
     # Create a chess.Board object from the FEN string
     board = chess.Board(fen)
-
     # Create a Lc0 engine
     with chess.engine.SimpleEngine.popen_uci(lc0_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(time = random.uniform(0.5, 2)))
-
-        # Get the best move
+        result = engine.play(board, chess.engine.Limit(time = searchTime))
         best_move = result.move
-
-    #print(best_move.uci())
     return best_move.uci()
 
 

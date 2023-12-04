@@ -2,6 +2,7 @@
 This is our main driver file. Responsible for handling user input and displaying current GameState
 """
 
+import random
 import pygame as p
 import ChessEngine, SmartMoveFinder
 
@@ -14,9 +15,9 @@ MENU_PANEL_WIDTH = MOVE_LOG_PANEL_WIDTH
 MENU_PANEL_HEIGHT = 200
 DIMENSION = 8 #dimensions of chess board are 8x8
 SQ_SIZE = BOARD_HEIGHT // DIMENSION
-MAX_FPS = 120 #for animation later on
+MAX_FPS = 3000 #for animation later on
 IMAGES = {}
-MAXIMUM_MOVES = 200 #maximum amount of moves for both of players, set 0 to disable
+MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
 LOG_FILE_PATH = "log.txt" # SILNIK_BIALY SILNIK_CZARNY 0/1/2 -> 0-whiteWin 1-BlackWin 2-stalemate 
 engineSelectedBlack = 'HUMAN'
 engineSelectedWhite = 'HUMAN'
@@ -58,6 +59,7 @@ def main():
     global resetGame
     global undoMove
     global soundOn
+    searchTime = random.uniform(0.5, 2)
 
     while running:
 
@@ -110,7 +112,7 @@ def main():
 
         #AI move finder
         if not gameOver and not humanTurn:
-            AIMove = SmartMoveFinder.useEngine(gs, validMoves, engineSelectedWhite, engineSelectedBlack)
+            AIMove = SmartMoveFinder.useEngine(gs, validMoves, engineSelectedWhite, engineSelectedBlack, searchTime)
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
@@ -133,16 +135,16 @@ def main():
             gameOver = True            
             if gs.whiteToMove:
                 with open(LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '1' +'\n')
+                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '1' + ' ' + str(searchTime) + '\n')
                 drawEndGameText(screen, 'Black win by checkmate')
             else:
                 with open(LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '0' +'\n')
+                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '0' + ' ' + str(searchTime) + '\n')
                 drawEndGameText(screen, 'White win by checkmate')
 
         elif gs.stalemate:
             with open(LOG_FILE_PATH, "a") as log_file:
-                log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '2' +'\n')
+                log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '2' + ' ' + str(searchTime) + '\n')
             gameOver = True
 
             drawEndGameText(screen, 'Stalemate')
@@ -156,6 +158,7 @@ def main():
             animate = False
             gameOver = False
             timer = 0 #TEMPORARY
+            searchTime = random.uniform(0.5, 2)
 
         if MAXIMUM_MOVES != 0:
             #print(timer)
@@ -289,6 +292,29 @@ def drawMenu(screen, mouse_pos, click):
         sound_image = p.image.load("images/mute.png")
     sound_image = p.transform.scale(sound_image, (button_width, button_height))
 
+    ### promotion buttons
+
+    queen_image = IMAGES['wQ']
+    rook_image = IMAGES['wR']
+    bishop_image = IMAGES['wB']
+    knight_image = IMAGES['wN']
+
+    queen_image =  p.transform.scale(queen_image, (button_width, button_height))
+    rook_image =  p.transform.scale(rook_image, (button_width, button_height))
+    bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
+    knight_image =  p.transform.scale(knight_image, (button_width, button_height))
+
+    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(queen_image, (button_x + 220, button_y))
+    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(rook_image, (button_x + 270, button_y))
+    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(bishop_image, (button_x + 320, button_y))
+    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(knight_image, (button_x + 370, button_y))
+
+    ### promotion buttons end
+
     # Draw Reset button
     reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
     screen.blit(reset_image, (button_x, button_y))  # Draw image
@@ -365,69 +391,6 @@ def drawMenu(screen, mouse_pos, click):
         if button_rect.collidepoint(mouse_pos) and click:
             button_info['function']()
 
-    # buttons to change engine properties
-    button_x = BOARD_WIDTH + 5 * 2
-    button_y = 170
-    # Button dimensions and positions
-    button_width = 50
-    button_height = 50
-
-    #  TODO make button ojects and normal sizes logic (more responsive)
-
-    ### WHITE BUTTONS ENGINE
-    # Load and resize button images
-    minus_time_white_button_image = p.image.load("images/minus.png")
-    # Draw Reset button
-    minus_time_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(minus_time_white_button_image, (button_x, button_y))  # Draw image
-
-    button_x += 70
-    # Load and resize button images
-    plus_time_white_button_image = p.image.load("images/plus.png")
-    # Draw Reset button
-    plus_time_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(plus_time_white_button_image, (button_x, button_y))  # Draw image
-
-    button_x += 40
-    minus_depth_white_button_image = p.image.load("images/minus.png")
-    # Draw Reset button
-    minus_depth_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(minus_depth_white_button_image, (button_x, button_y))  # Draw image
-
-    button_x += 70
-    plus_depth_white_button_image = p.image.load("images/plus.png")
-    # Draw Reset button
-    plus_depth_white_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(plus_depth_white_button_image, (button_x, button_y))  # Draw image
-
-
-    ### BLACK BUTTONS ENGINE
-    # Load and resize button images
-    minus_time_black_button_image = p.image.load("images/minus.png")
-    # Draw Reset button
-    minus_time_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(minus_time_black_button_image, (button_x, button_y))  # Draw image
-
-    button_x += 70
-    # Load and resize button images
-    plus_time_black_button_image = p.image.load("images/plus.png")
-    # Draw Reset button
-    plus_time_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(plus_time_black_button_image, (button_x, button_y))  # Draw image
-
-    button_x += 40
-    minus_depth_black_button_image = p.image.load("images/minus.png")
-    # Draw Reset button
-    minus_depth_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(minus_depth_black_button_image, (button_x, button_y))  # Draw image
-
-    button_x += 70
-    plus_depth_black_button_image = p.image.load("images/plus.png")
-    # Draw Reset button
-    plus_depth_black_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(plus_depth_black_button_image, (button_x, button_y))  # Draw image
-    
-
     # Check for button clicks
     if click:
         if reset_button_rect.collidepoint(mouse_pos):
@@ -441,26 +404,6 @@ def drawMenu(screen, mouse_pos, click):
         if sound_button_rect.collidepoint(mouse_pos):
             # Button dimensions and positions
             soundOn = not soundOn
-
-        if minus_time_white_button_rect.collidepoint(mouse_pos):
-            engineParameters[0] -= 1
-
-        if plus_time_white_button_rect.collidepoint(mouse_pos):
-            engineParameters[0] += 1
-
-        if minus_depth_white_button_rect.collidepoint(mouse_pos):
-            engineParameters[1] -= 1
-
-        if plus_depth_white_button_rect.collidepoint(mouse_pos):
-            engineParameters[1] += 1
-
-        
-                
-
-def updateEngineParameters(index, ):
-    global engineParameters
-
-
 
 
 

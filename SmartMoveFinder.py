@@ -1,6 +1,9 @@
 import random
 import chess
 import chess.engine
+import time
+
+MAX_STRENGTH = 0.5
 
 def useEngine(game_state, validMoves, engineWhite, engineBlack, searchTime):
     translatedFEN = traslateToFEN(game_state)
@@ -108,14 +111,11 @@ def traslateToFEN(game_state):
 
     result += ' '
 
-    if(game_state.fiftyMoveRuleCounter > 0):   
-        result += str(int(game_state.fiftyMoveRuleCounter)) #fifty-move rule
-    else:
-        result += str(game_state.fiftyMoveRuleCounter)
+    result += str(int(game_state.fiftyMoveRuleCounter))
     
     result += ' '
 
-    result += str(game_state.moveNumber) 
+    result += str(int(game_state.moveNumber)) 
     
     return result
 
@@ -124,36 +124,28 @@ def traslateToFEN(game_state):
 def getStockfishMove(fen, searchTime):
     # Set the path to your Stockfish executable
     stockfish_path = "StockfishSrc/stockfish-windows-x86-64-avx2.exe"
-
     # Create a chess.Board object from the FEN string
     board = chess.Board(fen)
-
     # Create a Stockfish engine
     with chess.engine.SimpleEngine.popen_uci(stockfish_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(time = searchTime))
-
+        result = engine.play(board, chess.engine.Limit(depth = 1))
         # Get the best move
         best_move = result.move
-
     #print(best_move.uci())
     return best_move.uci()
     
 def getFatFritz2Move(fen, searchTime):
     # Set the path to your Lc0 executable
     fatFritz2_path = 'FatFritz2\FatFritz2.exe'
-
     # Create a chess.Board object from the FEN string
     board = chess.Board(fen)
-
     # Create a Lc0 engine
     with chess.engine.SimpleEngine.popen_uci(fatFritz2_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(time = searchTime))
-
+        result = engine.play(board, chess.engine.Limit(depth = 1))
         # Get the best move
         best_move = result.move
-
     #print(best_move.uci())
     return best_move.uci()
     
@@ -165,7 +157,7 @@ def getLc0Move(fen, searchTime):
     # Create a Lc0 engine
     with chess.engine.SimpleEngine.popen_uci(lc0_path) as engine:
         # Set the position on the board
-        result = engine.play(board, chess.engine.Limit(time = searchTime))
+        result = engine.play(board, chess.engine.Limit(depth = 1))
         best_move = result.move
     return best_move.uci()
 
@@ -242,17 +234,23 @@ def getNegaMaxMove(game_state, valid_moves):
     random.shuffle(valid_moves)
     findMoveNegaMaxAlphaBeta(game_state, valid_moves, DEPTH, -CHECKMATE, CHECKMATE,
                              1 if game_state.whiteToMove else -1)
-    traslateToFEN(game_state)
-    return next_move
+    if  next_move is not None:
+        return  next_move
+    else:
+        return findMinmaxMove(valid_moves)
 
 
 def findMoveNegaMaxAlphaBeta(game_state, valid_moves, depth, alpha, beta, turn_multiplier):
+    # start_time = time.time()
     global next_move
     if depth == 0:
         return turn_multiplier * scoreBoard(game_state)
-    # move ordering - implement later //TODO
     max_score = -CHECKMATE
     for move in valid_moves:
+        # elapsed_time = time.time() - start_time
+        # if elapsed_time >= MAX_STRENGTH:
+        #     print("Time limit reached. Breaking out of the loop.")
+        #     break
         game_state.makeMove(move)
         next_moves = game_state.getValidMoves()
         score = -findMoveNegaMaxAlphaBeta(game_state, next_moves, depth - 1, -beta, -alpha, -turn_multiplier)

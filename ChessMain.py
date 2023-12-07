@@ -3,6 +3,7 @@ This is our main driver file. Responsible for handling user input and displaying
 """
 
 import random
+import time
 import pygame as p
 import ChessEngine, SmartMoveFinder
 
@@ -19,6 +20,8 @@ MAX_FPS = 3000 #for animation later on
 IMAGES = {}
 MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
 LOG_FILE_PATH = "log.txt" # SILNIK_BIALY SILNIK_CZARNY 0/1/2 -> 0-whiteWin 1-BlackWin 2-stalemate 
+TIME_LOG_FILE_PATH = "time.txt"
+TIME_LOG_FILE_PATH_BLACK = "time_black.txt"
 engineSelectedBlack = 'HUMAN'
 engineSelectedWhite = 'HUMAN'
 soundOn = True
@@ -59,7 +62,12 @@ def main():
     global resetGame
     global undoMove
     global soundOn
-    searchTime = random.uniform(0.5, 2)
+    searchTime = 8
+
+
+    p.display.set_caption("Chess algorithms demonstrator")
+    icon = p.image.load('images/bN.png')
+    p.display.set_icon(icon)
 
     while running:
 
@@ -112,7 +120,14 @@ def main():
 
         #AI move finder
         if not gameOver and not humanTurn:
+            start_time = time.time()
             AIMove = SmartMoveFinder.useEngine(gs, validMoves, engineSelectedWhite, engineSelectedBlack, searchTime)
+            if gs.whiteToMove:
+                with open(TIME_LOG_FILE_PATH_BLACK, "a") as log_file:
+                    log_file.write(str(time.time() - start_time) + '\n')
+            else:
+                with open(TIME_LOG_FILE_PATH, "a") as log_file:
+                    log_file.write(str(time.time() - start_time) + '\n')
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
@@ -135,16 +150,16 @@ def main():
             gameOver = True            
             if gs.whiteToMove:
                 with open(LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '1' + ' ' + str(searchTime) + '\n')
+                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '1' + ' ' + traslateToFEN(gs) + '\n')
                 drawEndGameText(screen, 'Black win by checkmate')
             else:
                 with open(LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '0' + ' ' + str(searchTime) + '\n')
+                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '0' + ' ' + traslateToFEN(gs) + '\n')
                 drawEndGameText(screen, 'White win by checkmate')
 
         elif gs.stalemate:
             with open(LOG_FILE_PATH, "a") as log_file:
-                log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '2' + ' ' + str(searchTime) + '\n')
+                log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '2' + ' ' + traslateToFEN(gs) + '\n')
             gameOver = True
 
             drawEndGameText(screen, 'Stalemate')
@@ -294,24 +309,24 @@ def drawMenu(screen, mouse_pos, click):
 
     ### promotion buttons
 
-    queen_image = IMAGES['wQ']
-    rook_image = IMAGES['wR']
-    bishop_image = IMAGES['wB']
-    knight_image = IMAGES['wN']
+    # queen_image = IMAGES['wQ']
+    # rook_image = IMAGES['wR']
+    # bishop_image = IMAGES['wB']
+    # knight_image = IMAGES['wN']
 
-    queen_image =  p.transform.scale(queen_image, (button_width, button_height))
-    rook_image =  p.transform.scale(rook_image, (button_width, button_height))
-    bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
-    knight_image =  p.transform.scale(knight_image, (button_width, button_height))
+    # queen_image =  p.transform.scale(queen_image, (button_width, button_height))
+    # rook_image =  p.transform.scale(rook_image, (button_width, button_height))
+    # bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
+    # knight_image =  p.transform.scale(knight_image, (button_width, button_height))
 
-    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(queen_image, (button_x + 220, button_y))
-    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(rook_image, (button_x + 270, button_y))
-    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(bishop_image, (button_x + 320, button_y))
-    #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(knight_image, (button_x + 370, button_y))
+    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    # screen.blit(queen_image, (button_x + 220, button_y))
+    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    # screen.blit(rook_image, (button_x + 270, button_y))
+    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    # screen.blit(bishop_image, (button_x + 320, button_y))
+    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    # screen.blit(knight_image, (button_x + 370, button_y))
 
     ### promotion buttons end
 
@@ -523,6 +538,69 @@ def drawEndGameText(screen, text):
     text_object = font.render(text, False, p.Color('black'))
     screen.blit(text_object, text_location.move(2, 2))
 
+def traslateToFEN(game_state):
+    result = ""
+    for i in range(len(game_state.board)):
+        empty = 0
+        for j in range(len(game_state.board)):
+            c = game_state.board[i][j][0]
+            if c == 'w' or c == 'b':
+                if empty > 0:
+                    result += str(empty)
+                    empty = 0
+                if c == 'w':
+                    result += game_state.board[i][j][1].upper()
+                else:
+                    result += game_state.board[i][j][1].lower()
+            else:
+                empty += 1
+        if empty > 0:
+            result += str(empty)
+        if i < len(game_state.board) - 1:
+          result += '/'
+
+    if (game_state.whiteToMove): 
+        result += ' w '
+    else:
+        result += ' b '
+
+    castlingRights = game_state.currentCastlingRight
+
+    #castle rights in FEN notation
+    if not (castlingRights.wks or castlingRights.wqs or castlingRights.bks or castlingRights.bqs):
+        result += ' - '
+    if (castlingRights.wks):
+        result += 'K'
+    if (castlingRights.wqs):
+        result += 'Q'
+    if (castlingRights.bks):
+        result += 'k'
+    if (castlingRights.bqs):
+        result += 'q'
+
+    result += ' '
+
+    if(game_state.enPassantPossible): # enpasant
+        enPassantCol = chr(game_state.enPassantPossible[1] + ord('a'))
+        enPassantRow = ((int(game_state.enPassantPossible[0]) - 1) - 7) * -1
+        result += enPassantCol + str(enPassantRow)
+    else:
+        result += '-' 
+
+    result += ' '
+
+    if(game_state.fiftyMoveRuleCounter > 0):   
+        result += str(int(game_state.fiftyMoveRuleCounter)) #fifty-move rule
+    else:
+        result += str(game_state.fiftyMoveRuleCounter)
+    
+    result += ' '
+
+    result += str(game_state.moveNumber) 
+    
+    return result
 
 if __name__ == "__main__":
     main()
+
+

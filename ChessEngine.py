@@ -42,18 +42,23 @@ class GameState():
     Make the move that is passed as a parameter
     '''
     def makeMove(self, move):
-        #print("WKS: " + str(self.currentCastlingRight.wks) + " " + str(self.currentCastlingRight.wqs))
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.board[move.startRow][move.startCol] = "--"
         self.moveLog.append(move) #log the move so we can undo it later
         if (not self.whiteToMove): 
             self.moveNumber += 1
+            self.fiftyMoveRuleCounter += 1
         self.whiteToMove = not self.whiteToMove #swap players
         #update the king's location if moved
         if move.pieceMoved == 'wK':
             self.whiteKingLocation = (move.endRow, move.endCol)
         elif move.pieceMoved == 'bK':
             self.blackKingLocation = (move.endRow, move.endCol)
+        # 50 rule reset
+        if move.pieceMoved[1] == 'p':
+            self.fiftyMoveRuleCounter = 0
+        if move.isCapture:
+            self.fiftyMoveRuleCounter = 0
         #enpassant move
         if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2: #only on 2 square pawn advances
             self.enPassantPossible = ((move.endRow + move.startRow)//2, move.endCol)                                
@@ -64,7 +69,7 @@ class GameState():
         #pawn promotion
         if move.isPawnPromotion:
             #promotedPiece = input("Promote to Q, R, B or N:")
-            promotedPiece = 'p' #TO REPAIR!!!!
+            promotedPiece = 'Q' #TO REPAIR!!!!
             self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
 
         #castle move
@@ -180,8 +185,10 @@ class GameState():
                 self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
             else:
                 self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
-        if len(self.moveLog) >= 9 and self.moveLog[-1] == self.moveLog[-5] == self.moveLog[-9]: # TODO simple stalemate, does not include complex posssibility
-            self.stalemate = True
+        # if len(self.moveLog) >= 9 and self.moveLog[-1] == self.moveLog[-5] == self.moveLog[-9]: # TODO simple stalemate, does not include complex posssibility
+        #     self.stalemate = True
+        # if self.fiftyMoveRuleCounter > 50:
+        #     self.stalemate = True
         if len(moves) == 0:
             if self.inCheck:
                 self.checkmate = True

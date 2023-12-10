@@ -3,7 +3,6 @@ This is our main driver file. Responsible for handling user input and displaying
 """
 
 import random
-import time
 import pygame as p
 import ChessEngine, SmartMoveFinder
 
@@ -19,15 +18,13 @@ SQ_SIZE = BOARD_HEIGHT // DIMENSION
 MAX_FPS = 3000 #for animation later on
 IMAGES = {}
 MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
-LOG_FILE_PATH = "log.txt" # SILNIK_BIALY SILNIK_CZARNY 0/1/2 -> 0-whiteWin 1-BlackWin 2-stalemate 
-TIME_LOG_FILE_PATH = "time.txt"
-TIME_LOG_FILE_PATH_BLACK = "time_black.txt"
 engineSelectedBlack = 'HUMAN'
 engineSelectedWhite = 'HUMAN'
 soundOn = True
 resetGame = False
 undoMove = False
 engineParameters = [3, 3, 3, 3]
+piecePromoted = ''
 
 
 '''
@@ -120,14 +117,7 @@ def main():
 
         #AI move finder
         if not gameOver and not humanTurn:
-            start_time = time.time()
             AIMove = SmartMoveFinder.useEngine(gs, validMoves, engineSelectedWhite, engineSelectedBlack, searchTime)
-            if gs.whiteToMove:
-                with open(TIME_LOG_FILE_PATH_BLACK, "a") as log_file:
-                    log_file.write(str(time.time() - start_time) + '\n')
-            else:
-                with open(TIME_LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(str(time.time() - start_time) + '\n')
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
@@ -149,17 +139,11 @@ def main():
         if gs.checkmate:
             gameOver = True            
             if gs.whiteToMove:
-                with open(LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '1' + ' ' + traslateToFEN(gs) + '\n')
                 drawEndGameText(screen, 'Black win by checkmate')
             else:
-                with open(LOG_FILE_PATH, "a") as log_file:
-                    log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '0' + ' ' + traslateToFEN(gs) + '\n')
                 drawEndGameText(screen, 'White win by checkmate')
 
         elif gs.stalemate:
-            with open(LOG_FILE_PATH, "a") as log_file:
-                log_file.write(engineSelectedWhite + ' ' +  engineSelectedBlack + ' ' + '2' + ' ' + traslateToFEN(gs) + '\n')
             gameOver = True
 
             drawEndGameText(screen, 'Stalemate')
@@ -262,25 +246,11 @@ def drawMoveLog(screen, gameState, font):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def drawMenu(screen, mouse_pos, click):
     """
     Draws game menu and handles button clicks.
     """
-    global soundOn
+    global soundOn, piecePromoted
     global engineParameters
     moveLogRect = p.Rect(BOARD_WIDTH, 0, MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT)
     p.draw.rect(screen, p.Color('gray'), moveLogRect)
@@ -309,24 +279,24 @@ def drawMenu(screen, mouse_pos, click):
 
     ### promotion buttons
 
-    # queen_image = IMAGES['wQ']
-    # rook_image = IMAGES['wR']
-    # bishop_image = IMAGES['wB']
-    # knight_image = IMAGES['wN']
+    queen_image = IMAGES['wQ']
+    rook_image = IMAGES['wR']
+    bishop_image = IMAGES['wB']
+    knight_image = IMAGES['wN']
 
-    # queen_image =  p.transform.scale(queen_image, (button_width, button_height))
-    # rook_image =  p.transform.scale(rook_image, (button_width, button_height))
-    # bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
-    # knight_image =  p.transform.scale(knight_image, (button_width, button_height))
+    queen_image =  p.transform.scale(queen_image, (button_width, button_height))
+    rook_image =  p.transform.scale(rook_image, (button_width, button_height))
+    bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
+    knight_image =  p.transform.scale(knight_image, (button_width, button_height))
 
-    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    # screen.blit(queen_image, (button_x + 220, button_y))
-    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    # screen.blit(rook_image, (button_x + 270, button_y))
-    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    # screen.blit(bishop_image, (button_x + 320, button_y))
-    # #reset_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    # screen.blit(knight_image, (button_x + 370, button_y))
+    queen_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(queen_image, (button_x + 220, button_y))
+    rook_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(rook_image, (button_x + 270, button_y))
+    bishop_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(bishop_image, (button_x + 320, button_y))
+    knight_button_rect = p.Rect(button_x, button_y, button_width, button_height)
+    screen.blit(knight_image, (button_x + 370, button_y))
 
     ### promotion buttons end
 

@@ -68,8 +68,8 @@ class GameState():
             self.board[move.startRow][move.endCol] = "--" #capturing the pawn        
         #pawn promotion
         if move.isPawnPromotion:
-            #promotedPiece = input("Promote to Q, R, B or N:")
-            promotedPiece = 'Q' #TO REPAIR!!!!
+            while(not promotedPiece):
+                promotedPiece = 'Q' 
             self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
 
         #castle move
@@ -185,10 +185,10 @@ class GameState():
                 self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
             else:
                 self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
-        # if len(self.moveLog) >= 9 and self.moveLog[-1] == self.moveLog[-5] == self.moveLog[-9]: # TODO simple stalemate, does not include complex posssibility
-        #     self.stalemate = True
-        # if self.fiftyMoveRuleCounter > 50:
-        #     self.stalemate = True
+        if len(self.moveLog) >= 9 and self.moveLog[-1] == self.moveLog[-5] == self.moveLog[-9]: # TODO simple stalemate, does not include complex posssibility
+            self.stalemate = True
+        if self.fiftyMoveRuleCounter > 50:
+            self.stalemate = True
         if len(moves) == 0:
             if self.inCheck:
                 self.checkmate = True

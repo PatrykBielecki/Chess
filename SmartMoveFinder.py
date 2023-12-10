@@ -39,13 +39,6 @@ def useEngine(game_state, validMoves, engineWhite, engineBlack, searchTime):
     if index_found is not None:
         return validMoves[index_found]
     else:
-        print("Object not found, tried: ", startCol, startRow, endCol, endRow)
-        print(traslateToFEN(game_state))
-        for i in range(len(validMoves)):
-            print(validMoves[i].startCol, validMoves[i].startRow, validMoves[i].endCol, validMoves[i].endRow)
-        print("---------------------------------------------------------------------------")
-        print("---------------------------------------------------------------------------")
-        print("---------------------------------------------------------------------------")
         return findMinmaxMove(validMoves)
 
 def findMinmaxMove(validMoves):
@@ -132,21 +125,19 @@ def getStockfishMove(fen, searchTime):
         result = engine.play(board, chess.engine.Limit(depth = 1))
         # Get the best move
         best_move = result.move
-    #print(best_move.uci())
     return best_move.uci()
     
 def getFatFritz2Move(fen, searchTime):
-    # Set the path to your Lc0 executable
+    # Set the path to your FatFritz2 executable
     fatFritz2_path = 'FatFritz2\FatFritz2.exe'
     # Create a chess.Board object from the FEN string
     board = chess.Board(fen)
-    # Create a Lc0 engine
+    # Create a FatFritz2 engine
     with chess.engine.SimpleEngine.popen_uci(fatFritz2_path) as engine:
         # Set the position on the board
         result = engine.play(board, chess.engine.Limit(depth = 1))
         # Get the best move
         best_move = result.move
-    #print(best_move.uci())
     return best_move.uci()
     
 def getLc0Move(fen, searchTime):
@@ -160,9 +151,6 @@ def getLc0Move(fen, searchTime):
         result = engine.play(board, chess.engine.Limit(depth = 1))
         best_move = result.move
     return best_move.uci()
-
-
-
 
 
 piece_score = {"K": 0, "Q": 9, "R": 5, "B": 3, "N": 3, "p": 1}

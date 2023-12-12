@@ -1,7 +1,6 @@
 import random
 import chess
 import chess.engine
-import time
 
 MAX_STRENGTH = 0.5
 

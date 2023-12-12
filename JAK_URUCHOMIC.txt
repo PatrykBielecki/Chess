@@ -1,0 +1,12 @@
+W celu uruchomienia demostratora, nalezy pobrać i wypakować wszystkie 
+pliki programu oraz silników w jednym folderze.
+
+Link do silników:
+https://drive.google.com/drive/folders/10Tf_GCRaY89wPbZnsoyevvz_wOLV7UUH?usp=sharing
+
+Wymagane zainstalowanie python'a w wersji 3.9
+
+Wymagane biblioteki zainstalowane za pomocą narzędzia pip install: 
+- chess
+- chess.engine
+- pygame

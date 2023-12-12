@@ -14,12 +14,14 @@ def useEngine(game_state, validMoves, engineWhite, engineBlack, searchTime):
         elif (engineWhite == 'LC0'):        bestMove = getLc0Move(translatedFEN, searchTime)
         elif (engineWhite == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN, searchTime)
         elif (engineWhite == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN, searchTime)
+        else: return findMinmaxMove(validMoves)
     else:
         if (engineBlack == 'MINMAX'):       return findMinmaxMove(validMoves)
         elif (engineBlack == 'NEGAMAX'):    return getNegaMaxMove(game_state, validMoves)
         elif (engineBlack == 'LC0'):        bestMove = getLc0Move(translatedFEN, searchTime)
         elif (engineBlack == 'FATFRITZ2'):  bestMove = getFatFritz2Move(translatedFEN, searchTime)
         elif (engineBlack == 'STOCKFISH'):  bestMove = getStockfishMove(translatedFEN, searchTime)
+        else: return findMinmaxMove(validMoves)
 
     startCol = ord(bestMove[0]) - ord('a')
     startRow = ((int(bestMove[1]) - 1) - 7) * -1

@@ -213,7 +213,7 @@ piece_position_scores = {"wN": knight_scores,
 
 CHECKMATE = 1000
 STALEMATE = 0
-DEPTH = 2
+DEPTH = 1
 
 
 def getNegaMaxMove(game_state, valid_moves):

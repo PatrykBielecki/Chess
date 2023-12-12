@@ -17,6 +17,7 @@ SQ_SIZE = BOARD_HEIGHT // DIMENSION
 MAX_FPS = 3000 #for animation later on
 IMAGES = {}
 MAXIMUM_MOVES = 0 #maximum amount of moves for both of players, set 0 to disable
+LOG_FILE_PATH = "log.txt"
 engineSelectedBlack = 'HUMAN'
 engineSelectedWhite = 'HUMAN'
 soundOn = True
@@ -161,8 +162,12 @@ def main():
         if gs.checkmate:
             gameOver = True           
             if gs.whiteToMove:
+                with open(LOG_FILE_PATH, "a") as log_file:
+                    log_file.write(engineSelectedBlack + ' ' + traslateToFEN(gs) + '\n')
                 drawEndGameText(screen, 'Black win by checkmate')
             else:
+                with open(LOG_FILE_PATH, "a") as log_file:
+                    log_file.write(engineSelectedWhite + ' ' + traslateToFEN(gs) + '\n')
                 drawEndGameText(screen, 'White win by checkmate')
 
         elif gs.stalemate:

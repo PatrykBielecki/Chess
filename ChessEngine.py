@@ -37,6 +37,7 @@ class GameState():
         self.currentCastlingRight = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wks, self.currentCastlingRight.bks,
                                              self.currentCastlingRight.wqs,self.currentCastlingRight.bqs )]
+        self.promotedPiece = ''
 
     '''
     Make the move that is passed as a parameter
@@ -68,9 +69,7 @@ class GameState():
             self.board[move.startRow][move.endCol] = "--" #capturing the pawn        
         #pawn promotion
         if move.isPawnPromotion:
-            while(not promotedPiece):
-                promotedPiece = 'Q' 
-            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + self.promotedPiece
 
         #castle move
         if move.castleMove:
@@ -185,8 +184,6 @@ class GameState():
                 self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
             else:
                 self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
-        if len(self.moveLog) >= 9 and self.moveLog[-1] == self.moveLog[-5] == self.moveLog[-9]: # TODO simple stalemate, does not include complex posssibility
-            self.stalemate = True
         if self.fiftyMoveRuleCounter > 50:
             self.stalemate = True
         if len(moves) == 0:
@@ -432,13 +429,13 @@ class GameState():
             self.getQueensideCastleMoves(r, c, moves)
         
     def getKingsideCastleMoves(self, r, c, moves):
-        if c == 4: #TO REPAIR!!!
+        if c == 4:
             if self.board[r][c+1] == "--" and self.board[r][c+2] == "--":
                 if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
                     moves.append(Move((r, c), (r, c+2), self.board, castleMove=True))
 
     def getQueensideCastleMoves(self, r, c, moves):
-        if c == 4: #TO REPAIR!!!
+        if c == 4: 
             if self.board[r][c-1] == "--" and self.board[r][c-2] == "--" and self.board[r][c-3] == "--":
                 if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c+2):
                     moves.append(Move((r, c), (r, c-2), self.board, castleMove=True))
@@ -548,31 +545,6 @@ class Move():
         if isinstance(other, Move):
             return self.moveID == other.moveID
         return False
-
-    def getChessNotation(self):
-        if self.pawnPromotion:
-            return self.getRankFile(self.endRow, self.endCol) + "Q"
-        if self.castleMove:
-            if self.endCol == 1:
-                return "0-0-0"
-            else:
-                return "0-0"
-        if self.enPassant:
-            return self.getRankFile(self.startRow, self.startCol)[0] + "x" + self.getRankFile(self.endRow,
-                                                                                                self.endCol) + " e.p."
-        if self.pieceCaptured != "--":
-            if self.pieceMoved[1] == "p":
-                return self.getRankFile(self.startRow, self.startCol)[0] + "x" + self.getRankFile(self.endRow,
-                                                                                                    self.endCol)
-            else:
-                return self.pieceMoved[1] + "x" + self.getRankFile(self.endRow, self.endCol)
-        else:
-            if self.pieceMoved[1] == "p":
-                return self.getRankFile(self.endRow, self.endCol)
-            else:
-                return self.pieceMoved[1] + self.getRankFile(self.endRow, self.endCol)
-
-        # TODO Disambiguating moves
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowsToRanks[r]

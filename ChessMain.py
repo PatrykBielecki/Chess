@@ -6,7 +6,6 @@ import random
 import pygame as p
 import ChessEngine, SmartMoveFinder
 
-# Z to redo move, R to restart game
 BOARD_HEIGHT = 512 #400 another option
 BOARD_WIDTH = BOARD_HEIGHT #one half of game window responsible for board, second for menu
 MOVE_LOG_PANEL_WIDTH = 450
@@ -23,7 +22,6 @@ engineSelectedWhite = 'HUMAN'
 soundOn = True
 resetGame = False
 undoMove = False
-engineParameters = [3, 3, 3, 3]
 piecePromoted = ''
 
 
@@ -34,7 +32,7 @@ def loadImages():
     pieces = ['wp', 'wR', 'wN', 'wB', 'wK', 'wQ', 'bp', 'bR', 'bN', 'bB', 'bK', 'bQ', 'bK']
     for piece in pieces:
         IMAGES[piece] = p.transform.scale(p.image.load("images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
-    #note: we can acces an image by saying IMAGES['wp']
+    #note: we can acces an image by IMAGES['wp']
 
 '''
 The main driver for our code, This will handle user input and update graphics
@@ -59,7 +57,9 @@ def main():
     global resetGame
     global undoMove
     global soundOn
+    global piecePromoted
     searchTime = 8
+    FENlog = []
 
 
     p.display.set_caption("Chess algorithms demonstrator")
@@ -75,7 +75,6 @@ def main():
                 running = False
             #mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                print(engineParameters)
                 location = p.mouse.get_pos() #(x, y) location of mouse
                 drawMenu(screen, location, True) # draw menu from function
                 if not gameOver and humanTurn:
@@ -90,9 +89,21 @@ def main():
                             playerClicks.append(sqSelected) #append for both, first and second click
                         if len(playerClicks) == 2: #after senond click
                             move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                            if (move.isPawnPromotion):
+                                piecePromoted = '?'
+                                drawMenu(screen, location, False) # draw menu from function
+                                while (piecePromoted == '?'):
+                                    for e in p.event.get():
+                                        if e.type == p.MOUSEBUTTONDOWN:
+                                            location = p.mouse.get_pos() #(x, y) location of mouse
+                                            drawMenu(screen, location, True) # draw menu from function
+                                        p.display.flip()
+                                gs.promotedPiece = piecePromoted
+                                piecePromoted = ''
                             for i in range(len(validMoves)):
                                 if move == validMoves[i]:
                                     gs.makeMove(validMoves[i])
+                                    FENlog.append(traslateToFEN(gs))
                                     moveMade = True
                                     animate = True
                                     sqSelected = () #reset user clicks
@@ -103,9 +114,12 @@ def main():
             if undoMove:
                 undoMove = False
                 gs.undoMove()
+                if (len(FENlog) > 0):
+                    FENlog.pop()
                 moveMade = True
                 animate = False
             if resetGame:
+                FENlog = []
                 resetGame = False
                 gs = ChessEngine.GameState()
                 validMoves = gs.getValidMoves()
@@ -118,7 +132,9 @@ def main():
         #AI move finder
         if not gameOver and not humanTurn:
             AIMove = SmartMoveFinder.useEngine(gs, validMoves, engineSelectedWhite, engineSelectedBlack, searchTime)
+            gs.promotedPiece = 'Q'
             gs.makeMove(AIMove)
+            FENlog.append(traslateToFEN(gs))
             moveMade = True
             animate = True
 
@@ -136,8 +152,14 @@ def main():
         if not gameOver:
             drawMoveLog(screen, gs, moveLogFont)
 
+        if len(set(FENlog)) < len(FENlog) - 2:
+            gs.stalemate = True
+            gameOver = True
+            drawEndGameText(screen, 'Stalemate')
+            
+
         if gs.checkmate:
-            gameOver = True            
+            gameOver = True           
             if gs.whiteToMove:
                 drawEndGameText(screen, 'Black win by checkmate')
             else:
@@ -145,10 +167,10 @@ def main():
 
         elif gs.stalemate:
             gameOver = True
-
             drawEndGameText(screen, 'Stalemate')
 
         if gameOver and not engineSelectedWhite == 'HUMAN' and not engineSelectedBlack == 'HUMAN' or (timer > MAXIMUM_MOVES and MAXIMUM_MOVES != 0): #TEMPORARY TO PLAY ALWAYS AND SEARCH FOR BUGS
+            FENlog = []
             gs = ChessEngine.GameState()
             validMoves = gs.getValidMoves()
             sqSelected = ()
@@ -251,7 +273,6 @@ def drawMenu(screen, mouse_pos, click):
     Draws game menu and handles button clicks.
     """
     global soundOn, piecePromoted
-    global engineParameters
     moveLogRect = p.Rect(BOARD_WIDTH, 0, MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT)
     p.draw.rect(screen, p.Color('gray'), moveLogRect)
 
@@ -278,25 +299,40 @@ def drawMenu(screen, mouse_pos, click):
     sound_image = p.transform.scale(sound_image, (button_width, button_height))
 
     ### promotion buttons
+    global piecePromoted
+    if (piecePromoted == '?'): 
+        queen_image = IMAGES['wQ']
+        rook_image = IMAGES['wR']
+        bishop_image = IMAGES['wB']
+        knight_image = IMAGES['wN']
 
-    queen_image = IMAGES['wQ']
-    rook_image = IMAGES['wR']
-    bishop_image = IMAGES['wB']
-    knight_image = IMAGES['wN']
+        queen_image =  p.transform.scale(queen_image, (button_width, button_height))
+        rook_image =  p.transform.scale(rook_image, (button_width, button_height))
+        bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
+        knight_image =  p.transform.scale(knight_image, (button_width, button_height))
 
-    queen_image =  p.transform.scale(queen_image, (button_width, button_height))
-    rook_image =  p.transform.scale(rook_image, (button_width, button_height))
-    bishop_image =  p.transform.scale(bishop_image, (button_width, button_height))
-    knight_image =  p.transform.scale(knight_image, (button_width, button_height))
+        queen_button_rect = p.Rect(button_x + 220, button_y, button_width, button_height)
+        screen.blit(queen_image, (button_x + 220, button_y))
+        rook_button_rect = p.Rect(button_x + 270, button_y, button_width, button_height)
+        screen.blit(rook_image, (button_x + 270, button_y))
+        bishop_button_rect = p.Rect(button_x + 320, button_y, button_width, button_height)
+        screen.blit(bishop_image, (button_x + 320, button_y))
+        knight_button_rect = p.Rect(button_x + 370, button_y, button_width, button_height)
+        screen.blit(knight_image, (button_x + 370, button_y))
 
-    queen_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(queen_image, (button_x + 220, button_y))
-    rook_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(rook_image, (button_x + 270, button_y))
-    bishop_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(bishop_image, (button_x + 320, button_y))
-    knight_button_rect = p.Rect(button_x, button_y, button_width, button_height)
-    screen.blit(knight_image, (button_x + 370, button_y))
+        # Check for promotion clicks
+        if click:
+            if queen_button_rect.collidepoint(mouse_pos):
+                piecePromoted = 'Q'
+
+            if rook_button_rect.collidepoint(mouse_pos):
+                piecePromoted = 'R'
+
+            if bishop_button_rect.collidepoint(mouse_pos):
+                piecePromoted = 'B'
+
+            if knight_button_rect.collidepoint(mouse_pos):
+                piecePromoted = 'N'
 
     ### promotion buttons end
 
@@ -528,45 +564,6 @@ def traslateToFEN(game_state):
             result += str(empty)
         if i < len(game_state.board) - 1:
           result += '/'
-
-    if (game_state.whiteToMove): 
-        result += ' w '
-    else:
-        result += ' b '
-
-    castlingRights = game_state.currentCastlingRight
-
-    #castle rights in FEN notation
-    if not (castlingRights.wks or castlingRights.wqs or castlingRights.bks or castlingRights.bqs):
-        result += ' - '
-    if (castlingRights.wks):
-        result += 'K'
-    if (castlingRights.wqs):
-        result += 'Q'
-    if (castlingRights.bks):
-        result += 'k'
-    if (castlingRights.bqs):
-        result += 'q'
-
-    result += ' '
-
-    if(game_state.enPassantPossible): # enpasant
-        enPassantCol = chr(game_state.enPassantPossible[1] + ord('a'))
-        enPassantRow = ((int(game_state.enPassantPossible[0]) - 1) - 7) * -1
-        result += enPassantCol + str(enPassantRow)
-    else:
-        result += '-' 
-
-    result += ' '
-
-    if(game_state.fiftyMoveRuleCounter > 0):   
-        result += str(int(game_state.fiftyMoveRuleCounter)) #fifty-move rule
-    else:
-        result += str(game_state.fiftyMoveRuleCounter)
-    
-    result += ' '
-
-    result += str(game_state.moveNumber) 
     
     return result
 
@@ -574,3 +571,61 @@ if __name__ == "__main__":
     main()
 
 
+def traslateToFEN(game_state):
+    result = ""
+    for i in range(len(game_state.board)):
+        empty = 0
+        for j in range(len(game_state.board)):
+            c = game_state.board[i][j][0]
+            if c == 'w' or c == 'b':
+                if empty > 0:
+                    result += str(empty)
+                    empty = 0
+                if c == 'w':
+                    result += game_state.board[i][j][1].upper()
+                else:
+                    result += game_state.board[i][j][1].lower()
+            else:
+                empty += 1
+        if empty > 0:
+            result += str(empty)
+        if i < len(game_state.board) - 1:
+            result += '/'
+
+        if (game_state.whiteToMove): 
+            result += ' w '
+        else:
+            result += ' b '
+
+        castlingRights = game_state.currentCastlingRight
+
+        #castle rights in FEN notation
+        if not (castlingRights.wks or castlingRights.wqs or castlingRights.bks or castlingRights.bqs):
+            result += ' - '
+        if (castlingRights.wks):
+            result += 'K'
+        if (castlingRights.wqs):
+            result += 'Q'
+        if (castlingRights.bks):
+            result += 'k'
+        if (castlingRights.bqs):
+            result += 'q'
+
+        result += ' '
+
+        if(game_state.enPassantPossible): # enpasant
+            enPassantCol = chr(game_state.enPassantPossible[1] + ord('a'))
+            enPassantRow = ((int(game_state.enPassantPossible[0]) - 1) - 7) * -1
+            result += enPassantCol + str(enPassantRow)
+        else:
+            result += '-' 
+
+        result += ' '
+
+        result += str(int(game_state.fiftyMoveRuleCounter))
+        
+        result += ' '
+
+        result += str(int(game_state.moveNumber)) 
+        
+        return result
